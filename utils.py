@@ -61,16 +61,20 @@ def addLines(linesToAdd, filePath, position=0):
     return lines
 
 
-def findLines(regex, filePath):
+def findLines(regex, filePath, begin=1, end=0):
     lines = getLines(filePath)
+
+    if end == 0:
+        end = len(lines) + 1
 
     if lines != None:
         matching = []
 
         i = 0
         for line in lines:
-            if re.search(regex, line):
-                matching.append(i + 1)
+            if begin - 1 < i < end - 1:
+                if re.search(regex, line):
+                    matching.append(i + 1)
             i += 1
 
         return matching
@@ -93,13 +97,16 @@ def deleteLineWhere(regex, filePath):
     return deletedLine   
 
 
-def fileIncludes(string, filePath):
+def fileIncludes(string, filePath, begin=1, end=0):
     f = io.open(filePath, 'rt')
     lines = [line for line in f.readlines()]
     hasVal = False
     f.close()
 
-    for line in lines:
+    if end == 0:
+        end = len(lines) + 1        
+
+    for line in lines[begin - 1:end - 1]:
         if string in line:
             hasVal = True
 
@@ -213,7 +220,6 @@ class Model:
         value = "''"
         if option == 'integer' or option == 'foreignId':
             value = 1
-        
 
         replace("insert\(\[", "insert([\n\t\t\t'{}' => {},".format(name, value), self.seederPath)
 
@@ -298,9 +304,8 @@ class Model:
             index = "<td>{{{{ $item->{} }}}}</td>".format(name)
 
         if option == "foreignId" and subOption == "many":
-            # create = 
-            create = '<div class="mb-3 col-12 col-md-6">\n\t\t\t\t\t<label for="{name}" class="form-label">{nameUpper}</label>\n\t\t\t\t\t<input type={type} class="form-control" id="{name}" name="{name}">\n\t\t\t\t</div>'.format(name = name, nameUpper = name.capitalize(), type = inputType)
-            edit = '<div class="mb-3 col-12 col-md-6">\n\t\t\t\t\t<label for="{name}" class="form-label">{nameUpper}</label>\n\t\t\t\t\t<input type={type} class="form-control" id="{name}" name="{name}" value="{{{{ ${modelLower}->{name} }}}}">\n\t\t\t\t</div>'.format(modelLower = self.modelLower, name = name, nameUpper = name.capitalize(), type = inputType)
+            create = '<div class="mb-3 col-12 col-md-6">\n\t\t\t\t\t<label for="{name}" class="form-label">{nameUpper}</label>\n\t\t\t\t\t<select name="{name}" id="{name}">\n\t\t\t\t\t\t@foreach (${otherModelLower}s as ${otherModelLower})\n\t\t\t\t\t\t\t<option value="{{{{ ${otherModelLower}->id }}}}">{{{{ ${otherModelLower}->id }}}}</option>\n\t\t\t\t\t\t@endforeach\n\t\t\t\t\t</select>\n\t\t\t\t</div>'.format(name = name, nameUpper = name.replace("_id", "").capitalize(), otherModelLower = name.replace("_id", ""))
+            edit = '<div class="mb-3 col-12 col-md-6">\n\t\t\t\t\t<label for="{name}" class="form-label">{nameUpper}</label>\n\t\t\t\t\t<select name="{name}" id="{name}">\n\t\t\t\t\t\t@foreach (${otherModelLower}s as ${otherModelLower})\n\t\t\t\t\t\t\t<option value="{{{{ ${otherModelLower}->id }}}}" {{{{ ${otherModelLower}->id == ${modelLower}->{name} ? \'selected\' : \'\' }}}}>{{{{ ${otherModelLower}->id }}}}</option>\n\t\t\t\t\t\t@endforeach\n\t\t\t\t\t</select>\n\t\t\t\t</div>'.format(name = name, nameUpper = name.replace("_id", "").capitalize(), modelLower = self.modelLower, otherModelLower = name.replace("_id", ""))
         else:
             create = '<div class="mb-3 col-12 col-md-6">\n\t\t\t\t\t<label for="{name}" class="form-label">{nameUpper}</label>\n\t\t\t\t\t<input type={type} class="form-control" id="{name}" name="{name}">\n\t\t\t\t</div>'.format(name = name, nameUpper = name.capitalize(), type = inputType)
             edit = '<div class="mb-3 col-12 col-md-6">\n\t\t\t\t\t<label for="{name}" class="form-label">{nameUpper}</label>\n\t\t\t\t\t<input type={type} class="form-control" id="{name}" name="{name}" value="{{{{ ${modelLower}->{name} }}}}">\n\t\t\t\t</div>'.format(modelLower = self.modelLower, name = name, nameUpper = name.capitalize(), type = inputType)
@@ -313,12 +318,12 @@ class Model:
         else:
             msg.append("index")
 
-        if not fileIncludes('<label for="{name}" class="form-label">{nameUpper}</label>'.format(name = name, nameUpper = name.capitalize()), self.createPath):
+        if not fileIncludes('<label for="{name}" class="form-label">{nameUpper}</label>'.format(name = name, nameUpper = name.replace('_id', '').capitalize()), self.createPath):
             replace("{{-- toReplace --}}", "{}\n\t\t\t\t{{{{-- toReplace --}}}}".format(create), self.createPath)
         else:
             msg.append("create")
 
-        if not fileIncludes('<label for="{name}" class="form-label">{nameUpper}</label>'.format(name = name, nameUpper = name.capitalize()), self.editPath):
+        if not fileIncludes('<label for="{name}" class="form-label">{nameUpper}</label>'.format(name = name, nameUpper = name.replace('_id', '').capitalize()), self.editPath):
             replace("{{-- toReplace --}}", "{}\n\t\t\t\t{{{{-- toReplace --}}}}".format(edit), self.editPath)
         else:
             msg.append("edit")
@@ -374,6 +379,7 @@ class Model:
             print("model already initialized /_/")
 
 
+    # out of date
     def addToWelcomeController(self):
         if not fileIncludes("'{}'".format(self.table), "app/Http/Controllers/WelcomeController.php"):
             replace("use Illuminate\\\\Http\\\\Request;", "use Illuminate\\\\Http\\\\Request;\nuse App\\\\Models\\\\{};".format(self.model), "app/Http/Controllers/WelcomeController.php")
@@ -381,17 +387,83 @@ class Model:
             replace("compact\(", "compact('{}',".format(self.table), "app/Http/Controllers/WelcomeController.php")
 
 
+    def addToController(self, controllerName, options=['index', 'edit', 'create']):
+        controllerName = controllerName.replace("Controller", "").capitalize()
+        controllerPath = "app/Http/Controllers/{}Controller.php".format(controllerName)
+
+        if not fileIncludes("use App\\Models\\{};".format(self.model), controllerPath):
+            replace("use Illuminate\\\\Http\\\\Request;", "use Illuminate\\\\Http\\\\Request;\nuse App\\\\Models\\\\{};".format(self.model), controllerPath)
+
+        for option in options:
+            beginMethodLine = findLines("{option}\(".format(option = option), controllerPath)[0] + 1
+
+            n = findLines("}", controllerPath)
+            for i in n:
+                if i > beginMethodLine:
+                    endMethodLine = i
+                    break
+
+            if not fileIncludes("${} = {}::all();".format(self.table, self.model), controllerPath, beginMethodLine, endMethodLine):
+                replace("\{", "{{\n\t\t${} = {}::all();".format(self.table, self.model), controllerPath, 1, beginMethodLine)
+                endMethodLine += 1
+
+                if not fileIncludes("compact(", controllerPath, beginMethodLine, endMethodLine):
+                    n = findLines("view", controllerPath, beginMethodLine, endMethodLine)
+                    line = None
+                    if len(n) > 0:
+                        line = n[0]
+                    if line != None:
+                        replace("\'\)", "', compact())", controllerPath, 1, line)
+
+                m = findLines("compact\(", controllerPath)
+                for i in m:
+                    if i > beginMethodLine:
+                        if not fileIncludes("'{}'".format(self.table), controllerPath, i, i + 1):
+                            replace("compact\(", "compact('{}', ".format(self.table), controllerPath, 1, i)
+                        break
+
+            else:
+                print("model already inderted in {}@{} /_/".format(controllerName, option))
+
+
+    # out of date
     def removeFromWelcomeController(self):
         deleteLineWhere("use App\\\\Models\\\\{};".format(self.model), "app/Http/Controllers/WelcomeController.php")
         deleteLineWhere("\${} = {}::all\(\);".format(self.table, self.model), "app/Http/Controllers/WelcomeController.php")
         replace("'{}',".format(self.table), "", "app/Http/Controllers/WelcomeController.php")
+
+
+    def removeFromController(self, controllerPath):
+        deleteLineWhere("use App\\\\Models\\\\{};".format(self.model), controllerPath)
+
+        while fileIncludes("${} = {}::all();".format(self.table, self.model), controllerPath):
+            deleteLineWhere("\${} = {}::all\(\);".format(self.table, self.model), controllerPath)
+
+        replace("'{}', ".format(self.table), "", controllerPath)
+        replace(", compact\(\)", "", controllerPath)
+
+
+    def removeFromAllControllers(self):
+        controllerPaths = glob.glob("app\\Http\\Controllers\\*")
+
+        def filterFn(e):
+            if e == 'app\\Http\\Controllers\\Auth':
+                return False
+            return True
+
+        controllerPaths = filter(filterFn, controllerPaths)
+
+        for path in controllerPaths:
+            self.removeFromController(path)
+
 
     def init(self):
         self.initController()
         self.initDatabaseSeeder()
         self.routes()
         self.initNavbar()
-        self.addToWelcomeController()
+        # self.addToWelcomeController()
+        self.addToController("welcome", ['index'])
         self.initModel()
         
         print("\nmodel {} initialized +__+\n".format(self.model))
@@ -440,7 +512,6 @@ class Model:
             deleteLines(n[0], n[0] + 1, "database/seeders/DatabaseSeeder.php")
 
         n = findLines("use App\\\\Http\\\\Controllers\\\\{}Controller;".format(self.model), "routes/web.php")
-        print(n)
         if len(n) > 0:
             deleteLines(n[0], n[0] + 1, "routes/web.php")
 
@@ -448,7 +519,8 @@ class Model:
         if len(n) > 0:
             deleteLines(n[0], n[0] + 1, "routes/web.php")
 
-        self.removeFromWelcomeController()
+        # self.removeFromWelcomeController()
+        self.removeFromAllControllers()
 
         print("\nmodel {} deleted :__:\n".format(self.model)) 
 

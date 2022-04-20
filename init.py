@@ -75,7 +75,7 @@ def init():
     # Welcome
     os.system("php artisan make:controller WelcomeController")
     shutil.move("resources/views/welcome.blade.php", "resources/views/pages/welcome.blade.php")
-    u.replace("\/\/", "function index() {\n\t\treturn view('pages.welcome', compact());\n\t}", "app/Http/Controllers/WelcomeController.php")
+    u.replace("\/\/", "function index()\n\t{\n\t\treturn view('pages.welcome', compact());\n\t}", "app/Http/Controllers/WelcomeController.php")
 
 
     # DatabaseSeeder

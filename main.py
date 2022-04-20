@@ -140,6 +140,7 @@ def avoidIntegrityConstraintViolation(model, otherModel):
     if n[0] > m[0]:
         u.switchLines(n[0], m[0], "database/seeders/DatabaseSeeder.php")
 
+
 def oneToOne(model, otherModel):
     # addColumn
     otherModel.addColumn("{}_id".format(model.modelLower), "foreignId", "many")
@@ -151,11 +152,13 @@ def oneToOne(model, otherModel):
     # verify database seeder
     avoidIntegrityConstraintViolation(model, otherModel)
 
+    print("relashionship \"{} has one {}\" added /_/".format(model.model, otherModel.model))
     
 
 def oneToMany(model, otherModel):
     # addColumn
-    otherModel.addColumn("{}_id".format(otherModel.modelLower), "foreignId")
+    otherModel.addColumn("{}_id".format(model.modelLower), "foreignId", "many")
+    model.addToController(otherModel.modelLower)
 
     # model functions
     hasMany(model, otherModel)
@@ -164,10 +167,13 @@ def oneToMany(model, otherModel):
     # verify database seeder
     avoidIntegrityConstraintViolation(model, otherModel)
 
+    print("relashionship \"{} has many {}\" added /_/".format(model.model, otherModel.model))
+
 
 def manyToMany(model, otherModel):
+    # to do
     print("coming soon...")
-
+    
 
 def addRelashionship(modelName=""):
     if modelName == "":
@@ -178,7 +184,7 @@ def addRelashionship(modelName=""):
     otherModel = None
 
     if not u.isModel(modelName):
-        print("model {} doesn't exists /_/'".format(modelName.capitalize()))
+        print("model {} doesn't exists /_/".format(modelName.capitalize()))
         return
     if not u.isModel(otherModelName):
         print("model {} doesn't exists /_/'".format(otherModelName.capitalize()))
@@ -255,7 +261,19 @@ def main():
 
 
 def test():
-    u.switchLines(18, 19, "database/seeders/DatabaseSeeder.php")
+    if u.isModel("aa"):
+        model = u.Model("aa")
+        model.delete()
+    if u.isModel("zz"):
+        otherModel = u.Model("zz")
+        otherModel.delete()
+
+    createModel("aa")
+    createModel("zz")
+
+    model = u.Model("aa")
+    otherModel = u.Model("zz")
+    oneToMany(model, otherModel)
 
 test()
 
