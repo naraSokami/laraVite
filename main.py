@@ -281,7 +281,7 @@ def main():
 
 
 
-main()
+# main()
 
 
 
@@ -292,12 +292,10 @@ main()
 
 def test():
 
-    aa = u.Model("aa")
-    aa.addColumn("icona", "icon")
+    model = u.Model("rr")
+    model.addColumnToDestroy("name", "file")
 
-    # Kernel.php
-
-# test()
+test()
 
 
 

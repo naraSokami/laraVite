@@ -195,6 +195,46 @@ def askIconList(env):
         return lists[int(answ) - 1]
 
 
+def getMethodHeight(method, filePath):
+    begin = findLines("{}\(".format(method), filePath)[0] + 1
+    end = None
+
+    m = findLines("}", filePath)
+    for i in m:
+        if i > begin:
+            end = i
+            break
+    
+    return begin, end
+
+
+def inMethod(method, string, filePath):
+    begin, end = getMethodHeight(method, filePath)
+
+    if fileIncludes(string, filePath, begin, end):
+        return True
+    return False
+
+
+def addToMethod(method, content : list, filePath, doIfExisting=False):
+    do = True
+
+    if not doIfExisting:
+        for line in content:
+            if inMethod(method, line, filePath):
+                do = False
+                break    
+    
+    begin, end = getMethodHeight(method, filePath)
+
+    if do:        
+        lines = addLines(content, filePath, begin)
+        write(filePath, "".join(lines))
+    else:
+        print("content already in {} method /_/".format(method))
+
+
+
 class Model:
 
     def __init__(self, model):
@@ -269,6 +309,9 @@ class Model:
     def addLinesToStore(self, linesToAdd):
         storeLine = findLines("{", self.controllerPath)[3]
         lines = addLines(["\n\t\t", "\n\t\t".join(linesToAdd)], self.controllerPath, storeLine)
+
+
+    
         
 
     def addColumnToStore(self, name, option):
@@ -292,6 +335,10 @@ class Model:
 
 
     def addColumnToUpdate(self, name, option):
+        if option == 'file':
+            if not fileIncludes("Illuminate\\Support\\Facades\\File;", self.controllerPath):
+                replace("Illuminate\\\\Http\\\\Request;", "Illuminate\\\\Http\\\\Request;\nuse Illuminate\\\\Support\\\\Facades\\\\File;", self.controllerPath, 1)
+
         if not fileIncludes("${}->save();".format(self.modelLower), self.controllerPath):
             print("to do : error handling addColumnToUpdate()")
             print("please report to the dev")
@@ -300,12 +347,23 @@ class Model:
         if not fileIncludes("${modelLower}->{name} = ".format(modelLower = self.modelLower, name = name), self.controllerPath):
             col = "${modelLower}->{name} = $request->{name};".format(modelLower = self.modelLower, name = name)
             if option == 'file':
-                col = "if ($request->{name}) {{\n\t\t\t${modelLower}->{name} = 'storage/img/'.$request->{name}->hashName();\n\t\t\t$request->{name}->storePublicly('img', 'public');\n\t\t}}".format(modelLower = self.modelLower, name = name)
+                col = "if ($request->{name}) {{\n\t\t\tif(File::exists(public_path(${modelLower}->{name})))\n\t\t\t\tFile::delete(public_path(${modelLower}->{name}));\n\t\t\t${modelLower}->{name} = 'storage/img/'.$request->{name}->hashName();\n\t\t\t$request->{name}->storePublicly('img', 'public');\n\t\t}}".format(modelLower = self.modelLower, name = name)
 
             replace("\${}->save\(\);".format(self.modelLower), "{col}\n\t\t${modelLower}->save();".format(modelLower = self.modelLower, col = col), self.controllerPath)
 
         else:
             print("column already exists in update methode /_/")
+
+
+    def addColumnToDestroy(self, name, option):
+        if option == "file":
+            if not fileIncludes("Illuminate\\Support\\Facades\\File;", self.controllerPath):
+                replace("Illuminate\\\\Http\\\\Request;", "Illuminate\\\\Http\\\\Request;\nuse Illuminate\\\\Support\\\\Facades\\\\File;", self.controllerPath, 1)
+
+            addToMethod("destroy", [
+                "\t\tif(File::exists(public_path(${}->{})))\n".format(self.modelLower, name),
+                "\t\t\tFile::delete(public_path(${}->{}));\n".format(self.modelLower, name)
+            ], self.controllerPath)
 
 
     def addColumnToMigration(self, name, option):
@@ -550,7 +608,10 @@ class Model:
         # Controller
         self.addColumnToStore(name, option)
         self.addColumnToUpdate(name, option)
-        self.addValidation(name)
+        self.addColumnToDestroy(name, option)
+
+        if option != "file":
+            self.addValidation(name)
 
         # Blades
         self.addColumnToBlades(name, option, subOption)
