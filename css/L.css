@@ -20,3 +20,8 @@
     font-size: 2rem;
     /* color: #2563eb; */
 }
+
+.L-radio-item img {
+    width: 50px;
+    object-fit: cover;
+}

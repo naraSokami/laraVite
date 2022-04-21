@@ -173,8 +173,8 @@ def fontawesomeInit():
         print("fontawesome seems to be already initialized /_/")
 
 
-def askIconList():
-    lists = getEnv("LARAVITE_ICON_LISTS").split(",")
+def askIconList(env):
+    lists = getEnv(env).split(",")
     options = []
     possibleAnswers = []
 
@@ -309,7 +309,7 @@ class Model:
 
 
     def addColumnToMigration(self, name, option):
-        if option == 'icon' or option == 'iconlist':
+        if option == 'icon' or option == 'iconlist' or option == 'imgIcon':
             option = 'string'
             
         if not fileIncludes("$table->{}('{}')".format(option if option != "file" else "string", name), self.migrationPath):
@@ -342,7 +342,7 @@ class Model:
             inputType = "file"
 
         # index
-        if option == "file":
+        if option == "file" or option == "imgIcon":
             index = "<td><img class=\"L-img\" src=\"{{{{ asset($item->{}) }}}}\"></img></td>".format(name)
         elif option == "foreignId":
             index = "<td>{{{{ $item->{}->id }}}}</td>".format(name.replace('_id', ''))
@@ -357,7 +357,10 @@ class Model:
             edit = '<div class="mb-3 col-12 col-md-6">\n\t\t\t\t\t<label for="{name}" class="form-label">{nameUpper}</label>\n\t\t\t\t\t<select name="{name}" id="{name}">\n\t\t\t\t\t\t@foreach (${otherModelLower}s as ${otherModelLower})\n\t\t\t\t\t\t\t<option value="{{{{ ${otherModelLower}->id }}}}" {{{{ ${otherModelLower}->id == ${modelLower}->{name} ? \'selected\' : \'\' }}}}>{{{{ ${otherModelLower}->id }}}}</option>\n\t\t\t\t\t\t@endforeach\n\t\t\t\t\t</select>\n\t\t\t\t</div>'.format(name = name, nameUpper = name.replace("_id", "").capitalize(), modelLower = self.modelLower, otherModelLower = name.replace("_id", ""))
         elif option == "icon":
             create = '<div class="mb-3 col-12 col-md-6">\n\t\t\t\t\t<label for="{name}" class="form-label">{nameUpper}</label>\n\t\t\t\t\t<div class="L-radio-container">\n\t\t\t\t\t\t@foreach (${iconList}s as ${iconList})\n\t\t\t\t\t\t\t<div class="L-radio-item">\n\t\t\t\t\t\t\t\t<i class="{{{{ ${iconList}->icon }}}}"></i>\n\t\t\t\t\t\t\t\t<input type=radio value="{{{{ ${iconList}->icon }}}}" name="{name}">\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t@endforeach\n\t\t\t\t\t</div>\n\t\t\t\t</div>'.format(name = name, nameUpper = name.capitalize(), iconList = subOption.lower())
-            edit = '<div class="mb-3 col-12 col-md-6">\n\t\t\t\t\t<label for="{name}" class="form-label">{nameUpper}</label>\n\t\t\t\t\t<div class="L-radio-container">\n\t\t\t\t\t\t@foreach (${iconList}s as ${iconList})\n\t\t\t\t\t\t\t<div class="L-radio-item">\n\t\t\t\t\t\t\t\t<i class="{{{{ ${iconList}->icon }}}}"></i>\n\t\t\t\t\t\t\t\t<input type=radio value="{{{{ ${iconList}->icon }}}}" name="{name}">\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t@endforeach\n\t\t\t\t\t</div>\n\t\t\t\t</div>'.format(name = name, nameUpper = name.capitalize(), iconList = subOption.lower())
+            edit = '<div class="mb-3 col-12 col-md-6">\n\t\t\t\t\t<label for="{name}" class="form-label">{nameUpper}</label>\n\t\t\t\t\t<div class="L-radio-container">\n\t\t\t\t\t\t@foreach (${iconList}s as ${iconList})\n\t\t\t\t\t\t\t<div class="L-radio-item">\n\t\t\t\t\t\t\t\t<i class="{{{{ ${iconList}->icon }}}}"></i>\n\t\t\t\t\t\t\t\t<input type=radio value="{{{{ ${iconList}->icon }}}}" name="{name}" {{{{ ${iconList}->icon == ${modelLower}->{name} ? "checked" : "" }}}}>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t@endforeach\n\t\t\t\t\t</div>\n\t\t\t\t</div>'.format(name = name, nameUpper = name.capitalize(), iconList = subOption.lower(), modelLower = self.modelLower)
+        elif option == "imgIcon":
+            create = '<div class="mb-3 col-12 col-md-6">\n\t\t\t\t\t<label for="{name}" class="form-label">{nameUpper}</label>\n\t\t\t\t\t<div class="L-radio-container">\n\t\t\t\t\t\t@foreach (${iconList}s as ${iconList})\n\t\t\t\t\t\t\t<div class="L-radio-item">\n\t\t\t\t\t\t\t\t<img src="{{{{ asset(${iconList}->icon) }}}}">\n\t\t\t\t\t\t\t\t<input type=radio value="{{{{ ${iconList}->icon }}}}" name="{name}">\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t@endforeach\n\t\t\t\t\t</div>\n\t\t\t\t</div>'.format(name = name, nameUpper = name.capitalize(), iconList = subOption.lower())
+            edit = '<div class="mb-3 col-12 col-md-6">\n\t\t\t\t\t<label for="{name}" class="form-label">{nameUpper}</label>\n\t\t\t\t\t<div class="L-radio-container">\n\t\t\t\t\t\t@foreach (${iconList}s as ${iconList})\n\t\t\t\t\t\t\t<div class="L-radio-item">\n\t\t\t\t\t\t\t\t<img src="{{{{ asset(${iconList}->icon) }}}}">\n\t\t\t\t\t\t\t\t<input type=radio value="{{{{ ${iconList}->icon }}}}" name="{name}" {{{{ ${iconList}->icon == ${modelLower}->{name} ? "checked" : "" }}}}>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t@endforeach\n\t\t\t\t\t</div>\n\t\t\t\t</div>'.format(name = name, nameUpper = name.capitalize(), iconList = subOption.lower(), modelLower = self.modelLower)
         else:
             create = '<div class="mb-3 col-12 col-md-6">\n\t\t\t\t\t<label for="{name}" class="form-label">{nameUpper}</label>\n\t\t\t\t\t<input type={type} class="form-control" id="{name}" name="{name}">\n\t\t\t\t</div>'.format(name = name, nameUpper = name.capitalize(), type = inputType)
             edit = '<div class="mb-3 col-12 col-md-6">\n\t\t\t\t\t<label for="{name}" class="form-label">{nameUpper}</label>\n\t\t\t\t\t<input type={type} class="form-control" id="{name}" name="{name}" value="{{{{ ${modelLower}->{name} }}}}">\n\t\t\t\t</div>'.format(modelLower = self.modelLower, name = name, nameUpper = name.capitalize(), type = inputType)
@@ -525,8 +528,12 @@ class Model:
 
 
     def addColumn(self, name, option="string", subOption=""):
-        if option == "icon":
-            subOption = askIconList()
+        env = "LARAVITE_ICON_LISTS"
+        if option == "imgIcon":
+            env = "LARAVITE_IMG_ICON_LISTS"
+
+        if option == "icon" or option == "imgIcon":
+            subOption = askIconList(env)
             print(subOption)
 
             if subOption != None:
@@ -595,16 +602,21 @@ class IconList(Model):
     def __init__(self, model, type="class"):
         super().__init__(model)
         self.type = type
+
+        self.env = "LARAVITE_ICON_LISTS"
+        if self.type == "img":
+            self.env = "LARAVITE_IMG_ICON_LISTS"
         
 
     def init(self):
         super().init()
 
-        if not fileIncludes("LARAVITE_ICON_LISTS", ".env"):
-            addEnv("LARAVITE_ICON_LISTS", "," + self.model)
+        if not fileIncludes(self.env, ".env"):
+            addEnv(self.env, "," + self.model)
         else:
-            if self.model not in getEnv("LARAVITE_ICON_LISTS"):
-                setEnv("LARAVITE_ICON_LISTS", "{},{}".format(self.model, getEnv("LARAVITE_ICON_LISTS")))
+            if self.model not in getEnv(self.env):
+                setEnv(self.env, "{},{}".format(self.model, getEnv(self.env)))
+        
 
         if self.type == "img":
             self.addColumn("icon", "file")
@@ -616,7 +628,7 @@ class IconList(Model):
     def delete(self):
         super().delete()
 
-        lists = getEnv("LARAVITE_ICON_LISTS").split(",")
+        lists = getEnv(self.env).split(",")
         if self.model in lists:
 
             def filterFn(e):
@@ -624,4 +636,4 @@ class IconList(Model):
                     return False
                 return True
 
-            setEnv("LARAVITE_ICON_LISTS", ",".join(filter(filterFn, lists)))
+            setEnv(self.env, ",".join(filter(filterFn, lists)))

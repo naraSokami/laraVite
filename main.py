@@ -40,7 +40,7 @@ def addColumn(model):
 def createModel(modelName=""):
 
     if modelName == "":
-        modelName = input("\nwhat name for the beatiful model u wanna create ?\n")
+        modelName = input("\nwhat name for the beautiful model u wanna create ?\n")
     model = None
 
     if u.isModel(modelName):
@@ -237,7 +237,7 @@ def createIconList(iconListName=""):
         return
     elif answ == "1":
         iconList = u.IconList(iconListName)
-    elif iconListName == "2":
+    elif answ == "2":
         iconList = u.IconList(iconListName, "img")
     else:
         print("\nsomething bad occured please report to dev :/\n")
