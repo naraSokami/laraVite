@@ -130,7 +130,7 @@ def isModel(modelName):
 def getEnv(name):
     lines = getLines('.env')
     for line in lines:
-        a = re.findall(r"{}=([A-z]+)".format(name), line)
+        a = re.findall(r"{}=([A-z,]+)".format(name), line)
         if len(a) > 0:
             return a[0]
     print("print no env named \"{}\" found /_/".format(name))
@@ -153,6 +153,48 @@ def migrate():
         os.system("php artisan migrate:fresh --seed")
 
 
+def fontawesomeInit():
+    if not fileIncludes("@fortawesome/fontawesome-free", "package.json"):
+        os.system("npm install --save @fortawesome/fontawesome-free")
+
+    if not fileIncludes("@fortawesome/fontawesome", "resources/sass/app.scss"):
+        lines = addLines([
+            "$fa-font-path: \"../webfonts\";\n",
+            "@import \"~@fortawesome/fontawesome-free/scss/fontawesome\";\n",
+            "@import \"~@fortawesome/fontawesome-free/scss/solid\";\n",
+            "@import \"~@fortawesome/fontawesome-free/scss/brands\";\n",
+            "@import \"~@fortawesome/fontawesome-free/scss/regular\";\n"
+        ], "resources/sass/app.scss")
+        write("resources/sass/app.scss", "".join(lines))
+
+        os.system("npm run dev")
+
+    else:
+        print("fontawesome seems to be already initialized /_/")
+
+
+def askIconList():
+    lists = getEnv("LARAVITE_ICON_LISTS").split(",")
+    options = []
+    possibleAnswers = []
+
+    i = 1
+    for l in lists:
+        options.append("{}) {}".format(i, l))
+        possibleAnswers.append(str(i))
+        i += 1
+
+    options.append("0) back")
+    possibleAnswers.append("0")
+        
+    answ = ask("what list do you wanna use ?", possibleAnswers, options)
+
+    if answ == "0":
+        return None
+    else:
+        return lists[int(answ) - 1]
+
+
 class Model:
 
     def __init__(self, model):
@@ -167,9 +209,9 @@ class Model:
         files = [
             ("app/Models/{}.php".format(self.model), "php artisan make:model {}".format(self.model)), 
             ("app/Http/Controllers/{}Controller.php".format(self.model), "php artisan make:controller -r {model}Controller --model={model}".format(model = self.model)),
-            ("database/migrations/*{}s*.php".format(self.modelLower), "php artisan make:migration create_{}_table".format(self.table)),
-            ("database/seeders/*{}*.php".format(self.modelLower), "php artisan make:seeder {}Seeder".format(self.model)),
-            ("database/factories/*{}*.php".format(self.modelLower), "php artisan make:factory {}Factory".format(self.model))
+            ("database/migrations/*{}s_table*.php".format(self.modelLower), "php artisan make:migration create_{}_table".format(self.table)),
+            ("database/seeders/*{}Seeder.php".format(self.modelLower), "php artisan make:seeder {}Seeder".format(self.model)),
+            ("database/factories/*{}Factory.php".format(self.modelLower), "php artisan make:factory {}Factory".format(self.model))
         ]
 
         for file in files:
@@ -210,7 +252,7 @@ class Model:
 
 
 
-    def addSeed(self, name, option):
+    def addColumnToSeeder(self, name, option):
         if not fileIncludes("use Illuminate\\Support\\Facades\\DB;", self.seederPath):
             replace("use Illuminate\\\\Database\\\\Seeder;", "use Illuminate\\\\Database\\\\Seeder;\nuse Illuminate\\\\Support\\\\Facades\\\\DB;", self.seederPath)
 
@@ -267,6 +309,9 @@ class Model:
 
 
     def addColumnToMigration(self, name, option):
+        if option == 'icon' or option == 'iconlist':
+            option = 'string'
+            
         if not fileIncludes("$table->{}('{}')".format(option if option != "file" else "string", name), self.migrationPath):
             col = None
             if option == 'foreignId':
@@ -296,16 +341,23 @@ class Model:
         if option == "file":
             inputType = "file"
 
+        # index
         if option == "file":
             index = "<td><img class=\"L-img\" src=\"{{{{ asset($item->{}) }}}}\"></img></td>".format(name)
         elif option == "foreignId":
             index = "<td>{{{{ $item->{}->id }}}}</td>".format(name.replace('_id', ''))
+        elif option == "icon" or option == "iconlist":
+            index = "<td><i class=\"{{{{ $item->{} }}}}\"></i></td>".format(name)
         else:
             index = "<td>{{{{ $item->{} }}}}</td>".format(name)
 
+        # edit / create 
         if option == "foreignId" and subOption == "many":
             create = '<div class="mb-3 col-12 col-md-6">\n\t\t\t\t\t<label for="{name}" class="form-label">{nameUpper}</label>\n\t\t\t\t\t<select name="{name}" id="{name}">\n\t\t\t\t\t\t@foreach (${otherModelLower}s as ${otherModelLower})\n\t\t\t\t\t\t\t<option value="{{{{ ${otherModelLower}->id }}}}">{{{{ ${otherModelLower}->id }}}}</option>\n\t\t\t\t\t\t@endforeach\n\t\t\t\t\t</select>\n\t\t\t\t</div>'.format(name = name, nameUpper = name.replace("_id", "").capitalize(), otherModelLower = name.replace("_id", ""))
             edit = '<div class="mb-3 col-12 col-md-6">\n\t\t\t\t\t<label for="{name}" class="form-label">{nameUpper}</label>\n\t\t\t\t\t<select name="{name}" id="{name}">\n\t\t\t\t\t\t@foreach (${otherModelLower}s as ${otherModelLower})\n\t\t\t\t\t\t\t<option value="{{{{ ${otherModelLower}->id }}}}" {{{{ ${otherModelLower}->id == ${modelLower}->{name} ? \'selected\' : \'\' }}}}>{{{{ ${otherModelLower}->id }}}}</option>\n\t\t\t\t\t\t@endforeach\n\t\t\t\t\t</select>\n\t\t\t\t</div>'.format(name = name, nameUpper = name.replace("_id", "").capitalize(), modelLower = self.modelLower, otherModelLower = name.replace("_id", ""))
+        elif option == "icon":
+            create = '<div class="mb-3 col-12 col-md-6">\n\t\t\t\t\t<label for="{name}" class="form-label">{nameUpper}</label>\n\t\t\t\t\t<div class="L-radio-container">\n\t\t\t\t\t\t@foreach (${iconList}s as ${iconList})\n\t\t\t\t\t\t\t<div class="L-radio-item">\n\t\t\t\t\t\t\t\t<i class="{{{{ ${iconList}->icon }}}}"></i>\n\t\t\t\t\t\t\t\t<input type=radio value="{{{{ ${iconList}->icon }}}}" name="{name}">\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t@endforeach\n\t\t\t\t\t</div>\n\t\t\t\t</div>'.format(name = name, nameUpper = name.capitalize(), iconList = subOption.lower())
+            edit = '<div class="mb-3 col-12 col-md-6">\n\t\t\t\t\t<label for="{name}" class="form-label">{nameUpper}</label>\n\t\t\t\t\t<div class="L-radio-container">\n\t\t\t\t\t\t@foreach (${iconList}s as ${iconList})\n\t\t\t\t\t\t\t<div class="L-radio-item">\n\t\t\t\t\t\t\t\t<i class="{{{{ ${iconList}->icon }}}}"></i>\n\t\t\t\t\t\t\t\t<input type=radio value="{{{{ ${iconList}->icon }}}}" name="{name}">\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t@endforeach\n\t\t\t\t\t</div>\n\t\t\t\t</div>'.format(name = name, nameUpper = name.capitalize(), iconList = subOption.lower())
         else:
             create = '<div class="mb-3 col-12 col-md-6">\n\t\t\t\t\t<label for="{name}" class="form-label">{nameUpper}</label>\n\t\t\t\t\t<input type={type} class="form-control" id="{name}" name="{name}">\n\t\t\t\t</div>'.format(name = name, nameUpper = name.capitalize(), type = inputType)
             edit = '<div class="mb-3 col-12 col-md-6">\n\t\t\t\t\t<label for="{name}" class="form-label">{nameUpper}</label>\n\t\t\t\t\t<input type={type} class="form-control" id="{name}" name="{name}" value="{{{{ ${modelLower}->{name} }}}}">\n\t\t\t\t</div>'.format(modelLower = self.modelLower, name = name, nameUpper = name.capitalize(), type = inputType)
@@ -387,9 +439,12 @@ class Model:
             replace("compact\(", "compact('{}',".format(self.table), "app/Http/Controllers/WelcomeController.php")
 
 
-    def addToController(self, controllerName, options=['index', 'edit', 'create']):
+    def addToController(self, controllerName, options=['index', 'edit', 'create'], ass=None):
         controllerName = controllerName.replace("Controller", "").capitalize()
         controllerPath = "app/Http/Controllers/{}Controller.php".format(controllerName)
+
+        if ass == None:
+            ass = self.model
 
         if not fileIncludes("use App\\Models\\{};".format(self.model), controllerPath):
             replace("use Illuminate\\\\Http\\\\Request;", "use Illuminate\\\\Http\\\\Request;\nuse App\\\\Models\\\\{};".format(self.model), controllerPath)
@@ -470,9 +525,19 @@ class Model:
 
 
     def addColumn(self, name, option="string", subOption=""):
+        if option == "icon":
+            subOption = askIconList()
+            print(subOption)
+
+            if subOption != None:
+                iconList = IconList(subOption)
+                iconList.addToController(self.model)
+            else:
+                return None
+
         # migration / Seeder / Factory
         self.addColumnToMigration(name, option)
-        self.addSeed(name, option)
+        self.addColumnToSeeder(name, option)
         self.addColumnToFactory(name, option)
 
         # Controller
@@ -526,3 +591,37 @@ class Model:
 
 
 
+class IconList(Model):
+    def __init__(self, model, type="class"):
+        super().__init__(model)
+        self.type = type
+        
+
+    def init(self):
+        super().init()
+
+        if not fileIncludes("LARAVITE_ICON_LISTS", ".env"):
+            addEnv("LARAVITE_ICON_LISTS", "," + self.model)
+        else:
+            if self.model not in getEnv("LARAVITE_ICON_LISTS"):
+                setEnv("LARAVITE_ICON_LISTS", "{},{}".format(self.model, getEnv("LARAVITE_ICON_LISTS")))
+
+        if self.type == "img":
+            self.addColumn("icon", "file")
+        else:
+            fontawesomeInit()
+            self.addColumn("icon", "iconlist")
+
+
+    def delete(self):
+        super().delete()
+
+        lists = getEnv("LARAVITE_ICON_LISTS").split(",")
+        if self.model in lists:
+
+            def filterFn(e):
+                if e == self.model:
+                    return False
+                return True
+
+            setEnv("LARAVITE_ICON_LISTS", ",".join(filter(filterFn, lists)))

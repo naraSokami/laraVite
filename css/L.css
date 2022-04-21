@@ -2,3 +2,21 @@
     width: 100px;
     object-fit: cover;
 }
+
+.L-radio-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.L-radio-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.L-radio-item i {
+    font-size: 2rem;
+    /* color: #2563eb; */
+}

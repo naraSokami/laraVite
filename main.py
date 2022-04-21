@@ -90,6 +90,9 @@ def modifyModel(modelName=""):
     elif action == "2":
         deleteModel(model)
 
+    elif action == "3":
+        addRelashionship(model.modelLower)
+
 
 def deleteModel(model):
  
@@ -219,6 +222,27 @@ def addRelashionship(modelName=""):
 
 
 
+def createIconList(iconListName=""):
+    if iconListName == "":
+        iconListName = input("\nhow do u wanna call it ?\n")
+    iconList = None
+
+    if u.isModel(iconListName):
+        print("\niconList already exists /_/")
+        return
+
+    answ = u.ask("What kind of iconList do u wanna create ?", ["1", "2", "0"], ["1) based on class", "2) based on images", "0) back"])
+
+    if answ == "0":
+        return
+    elif answ == "1":
+        iconList = u.IconList(iconListName)
+    elif iconListName == "2":
+        iconList = u.IconList(iconListName, "img")
+    else:
+        print("\nsomething bad occured please report to dev :/\n")
+
+    iconList.init()
 
 
 def main():
@@ -235,7 +259,7 @@ def main():
             if answ == "n":
                 init()
 
-    res = u.ask("what do u wanna do ?\n", ["1", "2", "3", "4", "5"], ["1) New Model", "2) Modify Model", "3) Add Relashionship", "4) Coming Soon...", "5) Coming Soon..."])
+    res = u.ask("what do u wanna do ?\n", ["1", "2", "3", "4", "5"], ["1) New Model", "2) Modify Model", "3) Add Relashionship", "4) New IconList", "5) Coming Soon..."])
 
     if res == "1":
         createModel()
@@ -245,6 +269,9 @@ def main():
 
     elif res == "3":
         addRelashionship()
+
+    elif res == "4":
+        createIconList()
         
 
 
@@ -254,28 +281,23 @@ def main():
 
 
 
-# main()
+main()
 
 
 
+# to do :
+# no more space loss when img update/destroy 
+# and that's pretty cool
 
 
 def test():
-    if u.isModel("aa"):
-        model = u.Model("aa")
-        model.delete()
-    if u.isModel("zz"):
-        otherModel = u.Model("zz")
-        otherModel.delete()
 
-    createModel("aa")
-    createModel("zz")
+    aa = u.Model("aa")
+    aa.addColumn("icona", "icon")
 
-    model = u.Model("aa")
-    otherModel = u.Model("zz")
-    oneToMany(model, otherModel)
+    # Kernel.php
 
-test()
+# test()
 
 
 
