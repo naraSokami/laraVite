@@ -46,7 +46,6 @@ def init():
             print("coming soon...")
 
         
-    # Tree (error handling: ok)
     for dir in ["back", "pages"]:
         if not os.path.isdir("resources/views/{}".format(dir)):
             os.mkdir("resources/views/{}".format(dir))

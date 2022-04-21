@@ -4,10 +4,7 @@ import utils as u
 import os
 from init import init, isInitialized
 
-VERSION = '1.0.0'
-
-# TO DO
-    # remove routes when deleted
+VERSION = '1.0.1'
 
 
 def addColumn(model):
@@ -281,13 +278,9 @@ def main():
 
 
 
-# main()
+main()
 
 
-
-# to do :
-# no more space loss when img update/destroy 
-# and that's pretty cool
 
 
 def test():
@@ -295,7 +288,7 @@ def test():
     model = u.Model("rr")
     model.addColumnToDestroy("name", "file")
 
-test()
+# test()
 
 
 
