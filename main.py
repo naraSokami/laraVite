@@ -6,9 +6,22 @@ from init import init, isInitialized
 
 VERSION = '1.0.1'
 
+# dont use model/otherModelControllers ?
+# /=> use Pivot controller
+    # store
+    # update
+    # destroy
+
+    # ==> no visual change ?
+    # all changes done on index blade
+
+
+
+
+
+
 
 def addColumn(model):
-
     print("to add column:")
     print("[column_name] [option]")
     print("leave empty when finished")
@@ -31,11 +44,8 @@ def addColumn(model):
             print("something bad occured :/")
             print("please try again !")
 
-        
-
 
 def createModel(modelName=""):
-
     if modelName == "":
         modelName = input("\nwhat name for the beautiful model u wanna create ?\n")
     model = None
@@ -56,8 +66,13 @@ def createModel(modelName=""):
     addColumn(model)
 
 
-def modifyModel(modelName=""):
+def addPoliciesAndGates(model):
+    model.addPolicies()
+    model.addGates()
+    model.addIdvfToMethod(["update"], model.controllerPath)
 
+
+def modifyModel(modelName=""):
     if modelName == "":
         modelName = input("\nWhich model do u wanna modify ?\n")
     
@@ -76,7 +91,7 @@ def modifyModel(modelName=""):
     model = u.Model(modelName)
     model.init()
 
-    action = u.ask("Possible actions:", ["1", "2", "3", "0"], ["1) Add column", "2) Delete model", "3) Add relashionship", "0) back"])
+    action = u.ask("Possible actions:", ["1", "2", "3", "4", "0"], ["1) Add column", "2) Delete model", "3) Add relashionship", "4) Add Policies&Gates", "0) back"])
 
     if action == "0":
         return
@@ -90,9 +105,11 @@ def modifyModel(modelName=""):
     elif action == "3":
         addRelashionship(model.modelLower)
 
+    elif action == "4":
+        addPoliciesAndGates(model)
+
 
 def deleteModel(model):
- 
     answ = u.ask("U sure you want to delete the {} model ? [y/n]".format(model.model), ["y", "n"])
 
     if answ == "y":
@@ -125,10 +142,10 @@ def belongsTo(model, otherModel):
         print("relashionship already exists in model {} /_/".format(otherModel.model))
 
 
-def belongsToMany(model, otherModel):
-    if not u.fileIncludes("public function {}()".format(model.modelLower), otherModel.modelPath):
-        n = u.findLines("}", otherModel.modelPath)
-        u.replace("}", "\n\tpublic function {}() \n\t{{\n\t\treturn $this->belongsToMany({}::class);\n\t}}\n}}".format(model.modelLower, model.model), otherModel.modelPath, 0, n[len(n)-1])
+def belongsToMany(model, otherModel, table):
+    if not u.fileIncludes("public function {}s()".format(model.modelLower), otherModel.modelPath):
+        n = u.findLines("}", otherModel.modelPath)  
+        u.replace("}", "\n\tpublic function {}s() \n\t{{\n\t\treturn $this->belongsToMany({}::class, '{}');\n\t}}\n}}".format(model.modelLower, model.model, table), otherModel.modelPath, 0, n[len(n)-1])
     else:
         print("relashionship already exists in model {} /_/".format(otherModel.model))
 
@@ -171,8 +188,31 @@ def oneToMany(model, otherModel):
 
 
 def manyToMany(model, otherModel):
-    # to do
-    print("coming soon...")
+    # init Pivot
+    pivot = u.Pivot("rr", "tt")
+    pivot.init()
+
+    # controller
+    # attach + detach 
+    model.addColumnToStore("{}_id".format(model.modelLower), "foreignId")
+    model.addColumnToUpdate("{}_id".format(model.modelLower), "foreignId")
+    otherModel.addColumnToStore("{}_id".format(otherModel.modelLower), "foreignId")
+    otherModel.addColumnToUpdate("{}_id".format(otherModel.modelLower), "foreignId")
+
+    # blades
+    model.addColumnToBlades("{}_id".format(otherModel.modelLower), "foreignId", "many")
+    otherModel.addColumnToBlades("{}_id".format(model.modelLower), "foreignId", "many")
+
+    # other controller
+    model.addToController(otherModel.modelLower)
+    otherModel.addToController(model.modelLower)
+
+    # model functions
+    table = "{}_{}".format(model.modelLower, otherModel.modelLower)
+    belongsToMany(model, otherModel, table)
+    belongsToMany(otherModel, model, table)
+
+    print("relashionship \"many to many\" between {} and {} added /_/".format(model.model, otherModel.model))
     
 
 def addRelashionship(modelName=""):
@@ -284,12 +324,24 @@ main()
 
 
 def test():
+    # u.isModel("rr")
+    # model = u.Model("rr")
+    # model.delete()
+
+    # u.isModel("tt")
+    # model = u.Model("tt")
+    # model.delete()
 
     model = u.Model("rr")
-    model.addColumnToDestroy("name", "file")
+    # otherModel = u.Model("tt")
+
+    model.init()
+    # otherModel.init()
+
+    # manyToMany(model, otherModel)
+    model.addColumn("test")
 
 # test()
-
 
 
 

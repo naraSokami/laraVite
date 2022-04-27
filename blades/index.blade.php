@@ -42,6 +42,7 @@
                             <form action="{{ route("modelLower.destroy", $item) }}" method="post">
                                 @csrf
                                 @method('DELETE')
+                                <input hidden type="text" name="_idvf" value="{{ encrypt($modelLower->id) }}">
                                 <button class="btn btn-danger">DELETE</button>
                             </form>
                         </td>

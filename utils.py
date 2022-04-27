@@ -4,6 +4,7 @@ import glob
 import os
 import os.path
 import shutil
+from env import *
 
 
 def command(command):
@@ -111,6 +112,12 @@ def fileIncludes(string, filePath, begin=1, end=0):
             hasVal = True
 
     return hasVal
+
+
+def use(string, filePath):
+    if not fileIncludes(string, filePath):
+        lines = addLines(["use {};\n".format(string)], filePath, 4)
+        write(filePath, "".join(lines))
 
 
 def switchLines(n : int, m : int, filePath : str):
@@ -235,6 +242,7 @@ def addToMethod(method, content : list, filePath, doIfExisting=False):
 
 
 
+
 class Model:
 
     def __init__(self, model):
@@ -255,8 +263,8 @@ class Model:
         ]
 
         for file in files:
-            if len(glob.glob(file[0])) == 0:
-                command(file[1])
+            if len(glob.glob(file[0])) <= 0:
+                os.system(file[1])  
 
         self.modelPath = glob.glob("app\\Models\\{}.php".format(self.model))[0]
         self.controllerPath = glob.glob("app\\Http\\Controllers\\{}Controller.php".format(self.model))[0]
@@ -310,9 +318,8 @@ class Model:
         storeLine = findLines("{", self.controllerPath)[3]
         lines = addLines(["\n\t\t", "\n\t\t".join(linesToAdd)], self.controllerPath, storeLine)
 
-
-    
         
+
 
     def addColumnToStore(self, name, option):
         if not fileIncludes("::create([", self.controllerPath):
@@ -391,9 +398,9 @@ class Model:
 
     def addColumnToBlades(self, name, option, subOption):
         if not fileIncludes("<form", self.createPath):
-            replace("{{-- toReplace --}}", '<form action="{{{{ route("{modelLower}.store") }}}}" method="POST" enctype="multipart/form-data">\n\t\t\t\t@csrf\n\t\t\t\t@method(\'POST\')\n\t\t\t\t{{{{-- toReplace --}}}}'.format(modelLower = self.modelLower), self.createPath)
+            replace("{{-- toReplace --}}", '<form action="{{{{ route("{modelLower}.store") }}}}" method="POST" enctype="multipart/form-data">\n\t\t\t\t@csrf\n\t\t\t\t@method(\'POST\')\n\t\t\t\t<input hidden type="text" name="_idvf" value="{{{{ encrypt(${modelLower}->id) }}}}">\n\t\t\t\t{{{{-- toReplace --}}}}'.format(modelLower = self.modelLower), self.createPath)
         if not fileIncludes("<form", self.editPath):
-            replace("{{-- toReplace --}}", '<form action="{{{{ route("{modelLower}.update", ${modelLower}) }}}}" method="POST" enctype="multipart/form-data">\n\t\t\t\t@csrf\n\t\t\t\t@method(\'PUT\')\n\t\t\t\t{{{{-- toReplace --}}}}'.format(modelLower = self.modelLower), self.editPath)
+            replace("{{-- toReplace --}}", '<form action="{{{{ route("{modelLower}.update", ${modelLower}) }}}}" method="POST" enctype="multipart/form-data">\n\t\t\t\t@csrf\n\t\t\t\t@method(\'PUT\')\n\t\t\t\t<input hidden type="text" name="_idvf" value="{{{{ encrypt(${modelLower}->id) }}}}">\n\t\t\t\t{{{{-- toReplace --}}}}'.format(modelLower = self.modelLower), self.editPath)
 
         inputType = "text"
         if option == "file":
@@ -619,6 +626,66 @@ class Model:
         print("column {} added -__-".format(name))
 
 
+    def addIdvfToMethod(self, methods : list, filePath):
+        for method in methods:
+            line = findLines("public function {}\(".format(method), filePath)[0]
+
+            if not fileIncludes('$request', filePath, line, line + 1):
+                print("can't add idvf to {} method cause method needs access to Request /_/".format(method))
+                return 0
+
+            addToMethod(method, ["\t\tif (decrypt($request->_idvf) == ${}->id)\n".format(self.modelLower),
+                                 "\t\t\tabort(403);\n\n",
+                            ], filePath)
+
+
+    def addPolicies(self, condition=DEFAULT_POLICY_CONDITION, methods=["store", "update", "destroy"]):
+        if not os.path.isfile("app/Policies/{}Policy.php".format(self.model)):
+            os.system("php artisan make:policy {model}Policy --model={model}".format(model = self.model))
+        else:
+            print("policy already initialized in {}Controller /_/".format(self.model))
+
+        pMethods = methods.copy()
+        for i in range(len(pMethods)):
+            if pMethods[i] == "store":
+                pMethods[i] = "create"
+            elif pMethods[i] == "destroy":
+                pMethods[i] = "delete"
+
+        use("Illuminate\\Support\\Facades\\Auth", "app/Policies/{}Policy.php".format(self.model))
+
+        # implement policies functions
+        for method in pMethods:
+            if not fileIncludes("public function {}".format(method), "app/Policies/{}Policy.php".format(self.model)):
+                replace("\n}", "\n\tpublic function() {}\n\t{{\n\t\t//\n\t}}".format(method), "app/Policies/{}Policy.php".format(self.model))
+            # add return condition; to pMethods
+            replace("\/\/", "return {};".format(condition), "app/Policies/{}Policy.php".format(self.model), 1, findLines("public function {}".format(method), "app/Policies/{}Policy.php".format(self.model))[0] + 2)
+
+        # add policies to controller
+        for i in range(len(methods)):
+            addToMethod(methods[i], ["\t\t$this->authorize('{}', {}::class);\n".format(pMethods[i], self.model)], self.controllerPath)
+        
+
+    def addGates(self, methods=["create", "edit"]):
+        pMethods = methods.copy()
+        for i in range(len(pMethods)):
+            if pMethods[i] == "edit":
+                pMethods[i] = "update"
+
+        # AuthServiceProvider
+        providerPath = "app\\Providers\\AuthServiceProvider.php"
+        use("Illuminate\\Support\\Facades\\Gate", providerPath)
+            
+        for i in range(len(methods)):
+            addToMethod("boot", ["\t\tGate::define('{}-{}', [{}Policy::class, '{}']);\n".format(methods[i], self.modelLower, self.model, pMethods[i])], providerPath)
+
+        # Controller
+        use("Illuminate\Support\Facades\Gate", self.controllerPath)
+        for i in range(len(methods)):   
+            var = "" if methods[i] == "create" else ", ${}".format(self.modelLower)
+            addToMethod(methods[i], ["\t\tGate::authorize('{}-{}'{});\n".format(methods[i], self.modelLower, var)], self.controllerPath) 
+
+
     def delete(self):
         files = [
             self.modelPath,
@@ -626,6 +693,7 @@ class Model:
             self.migrationPath,
             self.seederPath,
             self.factoryPath,
+            "app/Policies/{}Policy.php".format(self.model),
         ]
 
         for file in files:
@@ -698,3 +766,31 @@ class IconList(Model):
                 return True
 
             setEnv(self.env, ",".join(filter(filterFn, lists)))
+
+
+class Pivot:
+    def __init__(self, model, otherModel):
+        self.model = model
+        self.otherModel = otherModel
+        self.table = "{}_{}".format(model, otherModel)
+
+        if len(glob.glob("database/migrations/*create_{}_table.php".format(self.table))) == 0:
+            os.system("php artisan make:migration create_{}_table".format(self.table))
+
+        self.path = glob.glob("database/migrations/*create_{}_table.php".format(self.table))[0]
+
+
+    def addColumn(self, name):           
+        if not fileIncludes("$table->foreignId('{}')".format(name), self.path):
+            col = "$table->foreignId('{}')->constrained()->onDelete('cascade');".format(name)
+            replace("id\(\);", "id();\n\t\t\t{}".format(col), self.path)
+        else:
+            print("column already exists in table {} /_/".format(self.table))
+
+    
+    def init(self):
+        self.addColumn("{}_id".format(self.model))
+        self.addColumn("{}_id".format(self.otherModel))
+
+
+

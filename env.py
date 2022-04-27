@@ -1,0 +1,1 @@
+DEFAULT_POLICY_CONDITION = "Auth::user()->role_id === 1"
