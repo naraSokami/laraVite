@@ -167,6 +167,21 @@ def avoidIntegrityConstraintViolation(model, otherModel):
     if n[0] > m[0]:
         u.switchLines(n[0], m[0], "database/seeders/DatabaseSeeder.php")
 
+    # files order
+    modelFileN = model.migrationPath.replace("database\\migrations\\", "").split("_")
+    otherModelFileN = otherModel.migrationPath.replace("database\\migrations\\", "").split("_")
+
+    while int(modelFileN[0]) >= int(otherModelFileN[0]):
+        modelFileN[0] = int(modelFileN[0]) - 1
+    print(int(modelFileN[0]), int(otherModelFileN[0]))
+
+    modelFileN[0] = str(modelFileN[0])
+    newPath = "database\\migrations\\" + "_".join(modelFileN)
+
+    os.rename(model.migrationPath, newPath)
+    model.migrationPath = newPath
+
+
 
 def oneToOne(model, otherModel):
     # addColumn
@@ -334,23 +349,23 @@ def main():
 
 
 def test():
+    u.isModel("tt")
+    model = u.Model("tt")
+    model.delete()
+
     u.isModel("rr")
     model = u.Model("rr")
     model.delete()
 
-    # u.isModel("tt")
-    # model = u.Model("tt")
-    # model.delete()
-
+    otherModel = u.Model("tt")
     model = u.Model("rr")
-    # otherModel = u.Model("tt")
 
     model.init()
-    # otherModel.init()
+    otherModel.init()
 
     # manyToMany(model, otherModel)
     model.addColumn("test")
-    addPoliciesAndGates(model)
+    avoidIntegrityConstraintViolation(model, otherModel)
 
 
 
