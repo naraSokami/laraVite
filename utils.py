@@ -626,15 +626,18 @@ class Model:
         print("column {} added -__-".format(name))
 
 
-    def addIdvfToMethod(self, methods : list, filePath):
+    def addIdvfToMethods(self, filePath, methods=["edit", "update", "destroy", "show"]):
         for method in methods:
             line = findLines("public function {}\(".format(method), filePath)[0]
 
             if not fileIncludes('$request', filePath, line, line + 1):
-                print("can't add idvf to {} method cause method needs access to Request /_/".format(method))
-                return 0
+                replace("\)", ", Request $request)", filePath, 1, line)
+                
+                # out of date
+                # print("can't add idvf to {} method cause method needs access to Request /_/".format(method))
+                # return 0
 
-            addToMethod(method, ["\t\tif (decrypt($request->_idvf) == ${}->id)\n".format(self.modelLower),
+            addToMethod(method, ["\t\tif (decrypt($request->_idvf) != ${}->id)\n".format(self.modelLower),
                                  "\t\t\tabort(403);\n\n",
                             ], filePath)
 
@@ -794,3 +797,30 @@ class Pivot:
 
 
 
+class Job:
+    def __init__(self, name):
+        self.name = name
+        self.path = "app/Jobs/{}Job.php".format(name.capitalize())
+
+
+    def init(self):
+        if not os.path.isfile(self.path):
+            os.system("php artisan make:job {}Job".format(self.name))
+        else:
+            print("job {} already exists /_/".format(self.name))
+
+
+    def handle(self, content : list):
+        addToMethod("handle", content, self.path)
+        # todo
+
+
+    def delete(self):
+        if os.path.isfile(self.path):
+            os.remove(self.path)
+
+    # jobs
+    # php artisan make:job JobName
+    # php artisan queue:table to save jobs
+    # php artisan queue:work to "watch" the queue
+    

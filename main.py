@@ -3,8 +3,7 @@ import shutil
 import utils as u
 import os
 from init import init, isInitialized
-
-VERSION = '1.0.1'
+from env import *
 
 # dont use model/otherModelControllers ?
 # /=> use Pivot controller
@@ -16,9 +15,20 @@ VERSION = '1.0.1'
     # all changes done on index blade
 
 
+# TODO : mails
+            # config/mail.php
+            # php artisan make:mail MailName
+            # return $this->from('mail@gmail.com')->view(emails.viewName); 
+            # Mail::to('mail@gmail.com')->send(new MailName());
+#        notifications
+            # better with events/listeners
+            # php artisan make:notification NotificationName
+            # php artisan notification:table to save notifications
+
+# TODO : rename files when adding relashionship if needed
 
 
-
+# morphRelashionships
 
 
 def addColumn(model):
@@ -69,7 +79,7 @@ def createModel(modelName=""):
 def addPoliciesAndGates(model):
     model.addPolicies()
     model.addGates()
-    model.addIdvfToMethod(["update"], model.controllerPath)
+    model.addIdvfToMethods(model.controllerPath)
 
 
 def modifyModel(modelName=""):
@@ -318,15 +328,15 @@ def main():
 
 
 
-main()
+# main()
 
 
 
 
 def test():
-    # u.isModel("rr")
-    # model = u.Model("rr")
-    # model.delete()
+    u.isModel("rr")
+    model = u.Model("rr")
+    model.delete()
 
     # u.isModel("tt")
     # model = u.Model("tt")
@@ -340,8 +350,88 @@ def test():
 
     # manyToMany(model, otherModel)
     model.addColumn("test")
+    addPoliciesAndGates(model)
 
-# test()
+
+
+
+    def process_col(matrice, j, available):
+        # [[2,3,4],[1,0,2],[3,2,1]]
+        #matrice = input("Veuillez entrez votre matrice")
+
+
+        t = True
+
+        for i in range(len(matrice)):
+            if matrice[i][j] != 0 and i in available:
+                t = i
+                break
+        print(available)
+        if t is True:
+            return None
+
+
+        pivot = matrice[t][j]
+        for p in range(len(matrice[t])):
+            matrice[t][p] = matrice[t][p] / pivot
+
+
+
+        for k in range(len(matrice)):
+            if k != t:
+                pivot_1 = matrice[k][j]
+                for p in range(len(matrice[k])):
+                    matrice[k][p] = matrice[k][p] - pivot_1 * matrice[t][p]
+
+        for p in range(len(matrice[t])):
+            matrice[t][p] = matrice[t][p] * pivot
+
+        print(matrice)
+        return i
+
+    def compute_det():
+
+        matrice = "[[2,3,4],[1,0,2],[3,2,1]]"
+        matrice = matrice.replace("[[", "")
+        matrice = matrice.replace("]]", "")
+        matrice = matrice.split("],[")
+        n = len(matrice)
+        i = n
+        for l in range(len(matrice)):
+            matrice[l] = matrice[l].split(",")
+
+        for a in range(len(matrice)):
+            for b in range(len(matrice[a])):
+                matrice[a][b] = int(matrice[a][b])
+
+
+        available = range(len(matrice))
+        pivots = []
+        for j in range(n):
+            i = process_col(matrice, j, available)
+
+            if i is None:
+                print("La valeur du déterminant de votre matrice est 0")
+                return 0
+            pivots.append(matrice[i][j])
+
+            for t in range(len(list(available))):
+                if available[t] == j:
+                    available = list(available[:t]) + list(available[t + 1:])
+                    break
+
+
+        determinant = 1
+        for i in pivots:
+            determinant = determinant * i
+
+        print("La valeur du déterminant de votre matrice est", determinant)
+
+        return determinant
+
+    # compute_det()
+
+test()
 
 
 

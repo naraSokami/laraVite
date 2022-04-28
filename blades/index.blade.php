@@ -36,13 +36,17 @@
                         <td>{{ $item->created_at }}</td>
                         <td>{{ $item->updated_at }}</td>
                         <td>
-                            <a href="{{ route("modelLower.edit", $item) }}" class="btn btn-primary">EDIT</a>
+                            <form action="{{ route("modelLower.edit", $item) }}" method="get">
+                                @csrf
+                                <input type="hidden" name="_idvf" value="{{ encrypt($item->id) }}">
+                                <button class="btn btn-primary">EDIT</button>
+                            </form>
                         </td>
                         <td>
                             <form action="{{ route("modelLower.destroy", $item) }}" method="post">
                                 @csrf
                                 @method('DELETE')
-                                <input hidden type="text" name="_idvf" value="{{ encrypt($modelLower->id) }}">
+                                <input type="hidden" name="_idvf" value="{{ encrypt($item->id) }}">
                                 <button class="btn btn-danger">DELETE</button>
                             </form>
                         </td>
