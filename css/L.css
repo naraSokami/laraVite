@@ -25,3 +25,15 @@
     width: 50px;
     object-fit: cover;
 }
+
+/* .L-tags {
+    display: flex;
+} */
+
+.L-tag {
+    padding: 2px 10px;
+    text-align: center;
+    background-color: rgb(115, 193, 207);
+    color: #fff;
+    border-radius: 10px;
+}

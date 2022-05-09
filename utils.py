@@ -11,6 +11,12 @@ def command(command):
     os.system(command)
 
 
+def isMail(mailName):
+    if os.path.isfile("app\\Mail\\{}Mail.php".format(mailName.replace("Mail", "").capitalize())):
+        return True
+    return False
+
+
 def ask(question, possibleAnswers, options=[]):
     print("\n", question)
     for option in options:
@@ -134,6 +140,12 @@ def isModel(modelName):
     return False
 
 
+def isEnv(name):
+    if getEnv(name) != None:
+        return True
+    return False
+
+
 def getEnv(name):
     lines = getLines('.env')
     for line in lines:
@@ -141,6 +153,7 @@ def getEnv(name):
         if len(a) > 0:
             return a[0]
     print("print no env named \"{}\" found /_/".format(name))
+    return None
 
 
 def setEnv(name, value):
@@ -178,6 +191,19 @@ def fontawesomeInit():
 
     else:
         print("fontawesome seems to be already initialized /_/")
+
+
+def getIconLists():
+    classIcons = None
+    imgIcons = None
+
+    if isEnv("LARAVITE_ICON_LISTS"):
+        classIcons = getEnv("LARAVITE_ICON_LISTS").split(',')
+
+    if isEnv("LARAVITE_IMG_ICON_LISTS"):
+        imgIcons = getEnv("LARAVITE_IMG_ICON_LISTS").split(',')
+        
+    return classIcons, imgIcons
 
 
 def askIconList(env):
@@ -242,6 +268,11 @@ def addToMethod(method, content : list, filePath, doIfExisting=False):
 
 
 
+class Empty:
+    pass
+
+
+
 
 class Model:
 
@@ -284,6 +315,11 @@ class Model:
         replace("modelLower", self.modelLower, self.indexPath)
  
 
+    def getColumns(self):
+        # comming soon...
+        pass
+        
+
     def addValidation(self, name):
         if not fileIncludes("validate([", self.controllerPath):
             linesN = findLines("{", self.controllerPath)
@@ -318,8 +354,6 @@ class Model:
         storeLine = findLines("{", self.controllerPath)[3]
         lines = addLines(["\n\t\t", "\n\t\t".join(linesToAdd)], self.controllerPath, storeLine)
 
-        
-
 
     def addColumnToStore(self, name, option):
         if not fileIncludes("::create([", self.controllerPath):
@@ -330,12 +364,19 @@ class Model:
         col = "'{name}' => $request->{name},".format(name = name)
         if option == 'file':
             col = "'{name}' => 'storage/img/'.$request->{name}->hashName(),".format(name = name)
+        elif option == 'sync':
+            col = "${modelLower}->{name}()->sync($request->{name});".format(modelLower = self.modelLower, name = name)
 
-        if not fileIncludes(col, self.controllerPath):
-            replace("::create\(\[", "::create([\n\t\t\t{col}".format(col = col), self.controllerPath)
+        begin, end = getMethodHeight("store", self.controllerPath)
+        if not fileIncludes(col, self.controllerPath, begin, end):
             
             if option == 'file':
                 replace("\${modelLower} = {model}::create\(\[".format(modelLower = self.modelLower, model = self.model), "$request->{name}->storePublicly('img', 'public');\n\n\t\t${modelLower} = {model}::create([".format(modelLower = self.modelLower, model = self.model, name = name), self.controllerPath)
+            elif option == 'sync':
+                replace("return", "{}\n\n\t\treturn".format(col), self.controllerPath, 1, end - 1)
+                col = "${modelLower}->{name}()->sync($request->{name});".format(modelLower = self.modelLower, name = name)
+            else:
+                replace("::create\(\[", "::create([\n\t\t\t{col}".format(col = col), self.controllerPath)
         
         else:
             print("column already exists in store methode /_/")
@@ -351,10 +392,17 @@ class Model:
             print("please report to the dev")
             print("thanks :)")
 
-        if not fileIncludes("${modelLower}->{name} = ".format(modelLower = self.modelLower, name = name), self.controllerPath):
+        verif = "${modelLower}->{name} = ".format(modelLower = self.modelLower, name = name)
+        if option == 'sync':
+            verif = "${modelLower}->{name}()->sync($request->{name});".format(modelLower = self.modelLower, name = name)
+
+        begin, end = getMethodHeight("update", self.controllerPath)
+        if not fileIncludes(verif, self.controllerPath, begin, end):
             col = "${modelLower}->{name} = $request->{name};".format(modelLower = self.modelLower, name = name)
             if option == 'file':
                 col = "if ($request->{name}) {{\n\t\t\tif(File::exists(public_path(${modelLower}->{name})))\n\t\t\t\tFile::delete(public_path(${modelLower}->{name}));\n\t\t\t${modelLower}->{name} = 'storage/img/'.$request->{name}->hashName();\n\t\t\t$request->{name}->storePublicly('img', 'public');\n\t\t}}".format(modelLower = self.modelLower, name = name)
+            elif option == 'sync':
+                col = "${modelLower}->{name}()->sync($request->{name});".format(modelLower = self.modelLower, name = name)
 
             replace("\${}->save\(\);".format(self.modelLower), "{col}\n\t\t${modelLower}->save();".format(modelLower = self.modelLower, col = col), self.controllerPath)
 
@@ -398,7 +446,7 @@ class Model:
 
     def addColumnToBlades(self, name, option, subOption):
         if not fileIncludes("<form", self.createPath):
-            replace("{{-- toReplace --}}", '<form action="{{{{ route("{modelLower}.store") }}}}" method="POST" enctype="multipart/form-data">\n\t\t\t\t@csrf\n\t\t\t\t@method(\'POST\')\n\t\t\t\t<input hidden type="text" name="_idvf" value="{{{{ encrypt(${modelLower}->id) }}}}">\n\t\t\t\t{{{{-- toReplace --}}}}'.format(modelLower = self.modelLower), self.createPath)
+            replace("{{-- toReplace --}}", '<form action="{{{{ route("{modelLower}.store") }}}}" method="POST" enctype="multipart/form-data">\n\t\t\t\t@csrf\n\t\t\t\t@method(\'POST\')\n\t\t\t\t{{{{-- toReplace --}}}}'.format(modelLower = self.modelLower), self.createPath)
         if not fileIncludes("<form", self.editPath):
             replace("{{-- toReplace --}}", '<form action="{{{{ route("{modelLower}.update", ${modelLower}) }}}}" method="POST" enctype="multipart/form-data">\n\t\t\t\t@csrf\n\t\t\t\t@method(\'PUT\')\n\t\t\t\t<input hidden type="text" name="_idvf" value="{{{{ encrypt(${modelLower}->id) }}}}">\n\t\t\t\t{{{{-- toReplace --}}}}'.format(modelLower = self.modelLower), self.editPath)
 
@@ -409,6 +457,8 @@ class Model:
         # index
         if option == "file" or option == "imgIcon":
             index = "<td><img class=\"L-img\" src=\"{{{{ asset($item->{}) }}}}\"></img></td>".format(name)
+        elif option == "foreignId" and subOption == "many":
+            index = "<td class=\"L-tags\">\n\t\t\t\t\t\t\t@foreach ($item->{name}s as ${name})\n\t\t\t\t\t\t\t\t<span class=\"L-tag\">{{{{ ${name}->id }}}}</span>\n\t\t\t\t\t\t\t@endforeach\n\t\t\t\t\t\t</td>".format(name = name.replace('_id', ''))
         elif option == "foreignId":
             index = "<td>{{{{ $item->{}->id }}}}</td>".format(name.replace('_id', ''))
         elif option == "icon" or option == "iconlist":
@@ -418,8 +468,8 @@ class Model:
 
         # edit / create 
         if option == "foreignId" and subOption == "many":
-            create = '<div class="mb-3 col-12 col-md-6">\n\t\t\t\t\t<label for="{name}" class="form-label">{nameUpper}</label>\n\t\t\t\t\t<select name="{name}" id="{name}">\n\t\t\t\t\t\t@foreach (${otherModelLower}s as ${otherModelLower})\n\t\t\t\t\t\t\t<option value="{{{{ ${otherModelLower}->id }}}}">{{{{ ${otherModelLower}->id }}}}</option>\n\t\t\t\t\t\t@endforeach\n\t\t\t\t\t</select>\n\t\t\t\t</div>'.format(name = name, nameUpper = name.replace("_id", "").capitalize(), otherModelLower = name.replace("_id", ""))
-            edit = '<div class="mb-3 col-12 col-md-6">\n\t\t\t\t\t<label for="{name}" class="form-label">{nameUpper}</label>\n\t\t\t\t\t<select name="{name}" id="{name}">\n\t\t\t\t\t\t@foreach (${otherModelLower}s as ${otherModelLower})\n\t\t\t\t\t\t\t<option value="{{{{ ${otherModelLower}->id }}}}" {{{{ ${otherModelLower}->id == ${modelLower}->{name} ? \'selected\' : \'\' }}}}>{{{{ ${otherModelLower}->id }}}}</option>\n\t\t\t\t\t\t@endforeach\n\t\t\t\t\t</select>\n\t\t\t\t</div>'.format(name = name, nameUpper = name.replace("_id", "").capitalize(), modelLower = self.modelLower, otherModelLower = name.replace("_id", ""))
+            create = '<div class="mb-3 col-12 col-md-6">\n\t\t\t\t\t@foreach (${name}s as ${name})\n\t\t\t\t\t\t<label for="">{{{{ ${name}->id }}}}</label>\n\t\t\t\t\t\t<input type="checkbox" name="{name}s[]" value="{{{{ ${name}->id }}}}">\n\t\t\t\t\t@endforeach\n\t\t\t\t</div>'.format(name = name.replace("_id", ""))
+            edit = '<div class="mb-3 col-12 col-md-6">\n\t\t\t\t\t@foreach (${name}s as ${name})\n\t\t\t\t\t\t<label for="">{{{{ ${name}->id }}}}</label>\n\t\t\t\t\t\t<input type="checkbox" name="{name}s[]" value="{{{{ ${name}->id }}}}" {{{{ ${modelLower}->{name}s->contains(${name}) ? "checked" : "" }}}}>\n\t\t\t\t\t@endforeach\n\t\t\t\t</div>'.format(name = name.replace("_id", ""), modelLower = self.modelLower)
         elif option == "icon":
             create = '<div class="mb-3 col-12 col-md-6">\n\t\t\t\t\t<label for="{name}" class="form-label">{nameUpper}</label>\n\t\t\t\t\t<div class="L-radio-container">\n\t\t\t\t\t\t@foreach (${iconList}s as ${iconList})\n\t\t\t\t\t\t\t<div class="L-radio-item">\n\t\t\t\t\t\t\t\t<i class="{{{{ ${iconList}->icon }}}}"></i>\n\t\t\t\t\t\t\t\t<input type=radio value="{{{{ ${iconList}->icon }}}}" name="{name}">\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t@endforeach\n\t\t\t\t\t</div>\n\t\t\t\t</div>'.format(name = name, nameUpper = name.capitalize(), iconList = subOption.lower())
             edit = '<div class="mb-3 col-12 col-md-6">\n\t\t\t\t\t<label for="{name}" class="form-label">{nameUpper}</label>\n\t\t\t\t\t<div class="L-radio-container">\n\t\t\t\t\t\t@foreach (${iconList}s as ${iconList})\n\t\t\t\t\t\t\t<div class="L-radio-item">\n\t\t\t\t\t\t\t\t<i class="{{{{ ${iconList}->icon }}}}"></i>\n\t\t\t\t\t\t\t\t<input type=radio value="{{{{ ${iconList}->icon }}}}" name="{name}" {{{{ ${iconList}->icon == ${modelLower}->{name} ? "checked" : "" }}}}>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t@endforeach\n\t\t\t\t\t</div>\n\t\t\t\t</div>'.format(name = name, nameUpper = name.capitalize(), iconList = subOption.lower(), modelLower = self.modelLower)
@@ -432,18 +482,26 @@ class Model:
 
         msg = []
 
-        if not fileIncludes(index, self.indexPath):
+        indexVerif = index
+        if option == "foreignId" and subOption == "many":
+            indexVerif = "@foreach ($item->{name}s as ${name})".format(name = name.replace("_id", ""))
+
+        if not fileIncludes(indexVerif, self.indexPath):
             replace("<th>created_at<\/th>", "<th>{}</th>\n\t\t\t\t\t<th>created_at</th>".format(name.replace('_id', '').replace('_', ' ').capitalize()), self.indexPath)
             replace("{{-- toReplace --}}", "{}\n\t\t\t\t\t\t{{{{-- toReplace --}}}}".format(index), self.indexPath)
         else:
             msg.append("index")
 
-        if not fileIncludes('<label for="{name}" class="form-label">{nameUpper}</label>'.format(name = name, nameUpper = name.replace('_id', '').capitalize()), self.createPath):
-            replace("{{-- toReplace --}}", "{}\n\t\t\t\t{{{{-- toReplace --}}}}".format(create), self.createPath)
+        editCreateverif = '<label for="{name}" class="form-label">{nameUpper}</label>'.format(name = name, nameUpper = name.replace('_id', '').capitalize())
+        if option == "foreignId" and subOption == "many":
+            editCreateverif = 'name="{}s[]"'.format(name.replace("_id", ""))
+            
+        if not fileIncludes(editCreateverif, self.createPath):
+            replace("{{-- toReplace --}}", "{}\n\t\t\t\t{{{{-- toReplace --}}}}".format(create), self.createPath)   
         else:
             msg.append("create")
 
-        if not fileIncludes('<label for="{name}" class="form-label">{nameUpper}</label>'.format(name = name, nameUpper = name.replace('_id', '').capitalize()), self.editPath):
+        if not fileIncludes(editCreateverif, self.editPath):
             replace("{{-- toReplace --}}", "{}\n\t\t\t\t{{{{-- toReplace --}}}}".format(edit), self.editPath)
         else:
             msg.append("edit")
@@ -747,8 +805,8 @@ class IconList(Model):
             addEnv(self.env, "," + self.model)
         else:
             if self.model not in getEnv(self.env):
-                setEnv(self.env, "{},{}".format(self.model, getEnv(self.env)))
-        
+                newValue = [self.model]+getEnv(self.env).split(",")
+                setEnv(self.env, ",".join(newValue))
 
         if self.type == "img":
             self.addColumn("icon", "file")
@@ -777,16 +835,16 @@ class Pivot:
         self.otherModel = otherModel
         self.table = "{}_{}".format(model, otherModel)
 
-        if len(glob.glob("database/migrations/*create_{}_table.php".format(self.table))) == 0:
+        if len(glob.glob("database\\migrations\\*create_{}_table.php".format(self.table))) == 0:
             os.system("php artisan make:migration create_{}_table".format(self.table))
 
-        self.path = glob.glob("database/migrations/*create_{}_table.php".format(self.table))[0]
+        self.migrationPath = glob.glob("database\\migrations\\*create_{}_table.php".format(self.table))[0]
 
 
     def addColumn(self, name):           
-        if not fileIncludes("$table->foreignId('{}')".format(name), self.path):
+        if not fileIncludes("$table->foreignId('{}')".format(name), self.migrationPath):
             col = "$table->foreignId('{}')->constrained()->onDelete('cascade');".format(name)
-            replace("id\(\);", "id();\n\t\t\t{}".format(col), self.path)
+            replace("id\(\);", "id();\n\t\t\t{}".format(col), self.migrationPath)
         else:
             print("column already exists in table {} /_/".format(self.table))
 
@@ -824,3 +882,35 @@ class Job:
     # php artisan queue:table to save jobs
     # php artisan queue:work to "watch" the queue
     
+
+class Mail:
+    def __init__(self, name):
+        self.name = name
+        self.path = "app\\Mail\\{}Mail.php".format(name)
+        self.bladePath = "resources\\views\\emails\\{}.blade.php".format(name)
+
+
+    def init(self):
+        if not os.path.isfile(self.path):
+            os.system("php artisan make:mail {}Mail".format(self.name.capitalize()))
+        else:
+            print("mail {}Mail already exists /_/".format(self.name.capitalize()))
+
+        # Blades
+        if not os.path.isdir("resources\\views\\emails"):
+            os.mkdir("resources\\views\\emails")    
+
+        if not os.path.isfile(self.bladePath):
+            shutil.copyfile("{}\\mails\\example.blade.php".format(os.path.dirname(__file__)), self.bladePath)
+
+        replace("view.name", "emails.{}".format(self.name), self.path)
+
+        print("\nMail::to(\"mail@example.com\")->send(new {}Mail());\n".format(self.name.capitalize()))
+
+
+    def delete(self):
+        if os.path.isfile(self.path):
+            os.remove(self.path)
+
+        if os.path.isfile(self.bladePath):
+            os.remove(self.bladePath)

@@ -25,10 +25,11 @@ from env import *
             # php artisan make:notification NotificationName
             # php artisan notification:table to save notifications
 
-# TODO : rename files when adding relashionship if needed
-
 
 # morphRelashionships
+# softDeletes
+# [option] text
+
 
 
 def addColumn(model):
@@ -160,20 +161,20 @@ def belongsToMany(model, otherModel, table):
         print("relashionship already exists in model {} /_/".format(otherModel.model))
 
 
-def avoidIntegrityConstraintViolation(model, otherModel):
+def avoidIntegrityConstraintViolationInSeeder(model, otherModel):
     n = u.findLines("{}Seeder::class".format(model.model), "database/seeders/DatabaseSeeder.php")
     m = u.findLines("{}Seeder::class".format(otherModel.model), "database/seeders/DatabaseSeeder.php")
 
     if n[0] > m[0]:
         u.switchLines(n[0], m[0], "database/seeders/DatabaseSeeder.php")
 
-    # files order
+
+def avoidIntegrityConstraintViolationInMigrations(model, otherModel):
     modelFileN = model.migrationPath.replace("database\\migrations\\", "").split("_")
     otherModelFileN = otherModel.migrationPath.replace("database\\migrations\\", "").split("_")
 
     while int(modelFileN[0]) >= int(otherModelFileN[0]):
         modelFileN[0] = int(modelFileN[0]) - 1
-    print(int(modelFileN[0]), int(otherModelFileN[0]))
 
     modelFileN[0] = str(modelFileN[0])
     newPath = "database\\migrations\\" + "_".join(modelFileN)
@@ -181,6 +182,10 @@ def avoidIntegrityConstraintViolation(model, otherModel):
     os.rename(model.migrationPath, newPath)
     model.migrationPath = newPath
 
+
+def avoidIntegrityConstraintViolation(model, otherModel):
+    avoidIntegrityConstraintViolationInSeeder(model, otherModel)
+    avoidIntegrityConstraintViolationInMigrations(model, otherModel)
 
 
 def oneToOne(model, otherModel):
@@ -218,11 +223,11 @@ def manyToMany(model, otherModel):
     pivot.init()
 
     # controller
-    # attach + detach 
-    model.addColumnToStore("{}_id".format(model.modelLower), "foreignId")
-    model.addColumnToUpdate("{}_id".format(model.modelLower), "foreignId")
-    otherModel.addColumnToStore("{}_id".format(otherModel.modelLower), "foreignId")
-    otherModel.addColumnToUpdate("{}_id".format(otherModel.modelLower), "foreignId")
+    # attach + detach
+    model.addColumnToStore("{}s".format(otherModel.modelLower), "sync")
+    model.addColumnToUpdate("{}s".format(otherModel.modelLower), "sync")
+    otherModel.addColumnToStore("{}s".format(model.modelLower), "sync")
+    otherModel.addColumnToUpdate("{}s".format(model.modelLower), "sync")
 
     # blades
     model.addColumnToBlades("{}_id".format(otherModel.modelLower), "foreignId", "many")
@@ -236,6 +241,10 @@ def manyToMany(model, otherModel):
     table = "{}_{}".format(model.modelLower, otherModel.modelLower)
     belongsToMany(model, otherModel, table)
     belongsToMany(otherModel, model, table)
+
+    # verify integrations
+    avoidIntegrityConstraintViolationInMigrations(model, pivot)
+    avoidIntegrityConstraintViolationInMigrations(otherModel, pivot)
 
     print("relashionship \"many to many\" between {} and {} added /_/".format(model.model, otherModel.model))
     
@@ -307,6 +316,81 @@ def createIconList(iconListName=""):
     iconList.init()
 
 
+def listIconLists():
+    classIconList, imgIconList = u.getIconLists()
+    if classIconList is not None:
+        print("\nclass iconLists :")
+        for iconList in classIconList:
+            print("\t{}".format(iconList))
+    else:
+        print("no class iconLists found /_/")
+
+    if imgIconList is not None:
+        print("\nimg iconLists :")
+        for iconList in imgIconList:
+            print("\t{}".format(iconList))
+    else:
+        print("no img iconLists found /_/")
+
+def deleteIconList(iconListName=""):
+    if iconListName == "":
+        iconListName = input("\nName of the iconList :\n")
+
+    if not u.isModel(iconListName):
+        print("iconList {} doesn't exists /_/".format(iconListName.capitalize()))
+        return
+
+    iconList = u.IconList(iconListName)
+    iconList.delete()
+
+
+def iconLists():
+    answ = u.ask("What do u wanna do ?", ["1", "2", "3", "0"], ["1) create a new iconList", "2) list all iconLists", "3) delete iconList", "0) back"])
+
+    if answ == "0":
+        return
+    elif answ == "1":
+        createIconList()
+    elif answ == "2":
+        listIconLists()
+    elif answ == "3":
+        deleteIconList()
+    else:
+        print("\nsomething bad occured please report to dev :/\n")
+
+
+def createMail(mailName):
+    if mailName == "":
+        name = input("\nName of the mail :\n")
+    mail = u.Mail(name)
+    mail.init()
+
+
+def deleteMail(mailName=""):
+    if mailName == "":
+        mailName = input("\nName of the mail :\n")
+
+    if not u.isMail(mailName):
+        print("mail {} doesn't exists /_/".format(mailName.capitalize()))
+        return
+
+    mail = u.Mail(mailName)
+    mail.delete()
+
+
+def mails():
+    answ = u.ask("What do u wanna do ?", ["1", "2", "0"], ["1) New mail", "2) Delete mail", "0) back"])
+
+    if answ == "0":
+        return
+    elif answ == "1":
+        createMail()
+    elif answ == "2":
+        deleteMail()
+    else:
+        print("\nsomething bad occured please report to dev :/\n")
+
+
 def main():
 
     if not isInitialized():
@@ -321,41 +405,51 @@ def main():
             if answ == "n":
                 init()
 
-    res = u.ask("what do u wanna do ?\n", ["1", "2", "3", "4", "5"], ["1) New Model", "2) Modify Model", "3) Add Relashionship", "4) New IconList", "5) Coming Soon..."])
+    while True:
+        res = u.ask("what do u wanna do ?\n", ["1", "2", "3", "4", "5", "6", "0"], ["1) New Model", "2) Modify Model", "3) Add Relashionship", "4) IconLists", "5) Mails", "6) Coming Soon...", "0) exit"])
 
-    if res == "1":
-        createModel()
+        if res == "1":
+            createModel()
 
-    elif res == "2":
-        modifyModel()
+        elif res == "2":
+            modifyModel()
 
-    elif res == "3":
-        addRelashionship()
+        elif res == "3":
+            addRelashionship()
 
-    elif res == "4":
-        createIconList()
-        
+        elif res == "4":
+            iconLists()
+
+        elif res == "5":
+            mails()
+
+        elif res == "6":
+            print("\ncoming soon...\n")
+
+        elif res == "0":
+            u.migrate() 
+            print("\nthank u for using laraVite {}".format(VERSION))
+            print("we hope to see u soon")
+            return 0
+
+        u.migrate()
+        # print("\nthank u for using laraVite {}".format(VERSION))
+        # print("we hope to see u soon")
 
 
-    u.migrate()
-    print("\nthank u for using laraVite {}".format(VERSION))
-    print("we hope to see u soon")
 
-
-
-# main()
 
 
 
 
 def test():
-    u.isModel("tt")
-    model = u.Model("tt")
-    model.delete()
+    # u.isModel("tt")
+    # model = u.Model("tt")
+    # model.delete()
 
-    u.isModel("rr")
-    model = u.Model("rr")
-    model.delete()
+    # u.isModel("rr")
+    # model = u.Model("rr")
+    # model.delete()
 
     otherModel = u.Model("tt")
     model = u.Model("rr")
@@ -363,91 +457,27 @@ def test():
     model.init()
     otherModel.init()
 
-    # manyToMany(model, otherModel)
-    model.addColumn("test")
-    avoidIntegrityConstraintViolation(model, otherModel)
+    manyToMany(model, otherModel)
+    model.addColumn("name")
+    otherModel.addColumn("name")
 
 
 
 
-    def process_col(matrice, j, available):
-        # [[2,3,4],[1,0,2],[3,2,1]]
-        #matrice = input("Veuillez entrez votre matrice")
-
-
-        t = True
-
-        for i in range(len(matrice)):
-            if matrice[i][j] != 0 and i in available:
-                t = i
-                break
-        print(available)
-        if t is True:
-            return None
-
-
-        pivot = matrice[t][j]
-        for p in range(len(matrice[t])):
-            matrice[t][p] = matrice[t][p] / pivot
-
-
-
-        for k in range(len(matrice)):
-            if k != t:
-                pivot_1 = matrice[k][j]
-                for p in range(len(matrice[k])):
-                    matrice[k][p] = matrice[k][p] - pivot_1 * matrice[t][p]
-
-        for p in range(len(matrice[t])):
-            matrice[t][p] = matrice[t][p] * pivot
-
-        print(matrice)
-        return i
-
-    def compute_det():
-
-        matrice = "[[2,3,4],[1,0,2],[3,2,1]]"
-        matrice = matrice.replace("[[", "")
-        matrice = matrice.replace("]]", "")
-        matrice = matrice.split("],[")
-        n = len(matrice)
-        i = n
-        for l in range(len(matrice)):
-            matrice[l] = matrice[l].split(",")
-
-        for a in range(len(matrice)):
-            for b in range(len(matrice[a])):
-                matrice[a][b] = int(matrice[a][b])
-
-
-        available = range(len(matrice))
-        pivots = []
-        for j in range(n):
-            i = process_col(matrice, j, available)
-
-            if i is None:
-                print("La valeur du déterminant de votre matrice est 0")
-                return 0
-            pivots.append(matrice[i][j])
-
-            for t in range(len(list(available))):
-                if available[t] == j:
-                    available = list(available[:t]) + list(available[t + 1:])
-                    break
-
-
-        determinant = 1
-        for i in pivots:
-            determinant = determinant * i
-
-        print("La valeur du déterminant de votre matrice est", determinant)
-
-        return determinant
-
-    # compute_det()
-
-test()
+main()
+# test()
 
 
 
 
+
+
+
+def temp():
+    portnames = ["PAN", "AMS", "CAS", "NYC", "HEL"]
+    for portname in portnames:
+        print(portname)
+        
+
+
+# temp()
