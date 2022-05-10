@@ -5,15 +5,6 @@ import os
 from init import init, isInitialized
 from env import *
 
-# dont use model/otherModelControllers ?
-# /=> use Pivot controller
-    # store
-    # update
-    # destroy
-
-    # ==> no visual change ?
-    # all changes done on index blade
-
 
 # TODO : mails
             # config/mail.php
@@ -28,7 +19,7 @@ from env import *
 
 # morphRelashionships
 # softDeletes
-# [option] text
+# [option] text DONE
 
 
 
@@ -443,13 +434,13 @@ def main():
 
 
 def test():
-    # u.isModel("tt")
-    # model = u.Model("tt")
-    # model.delete()
+    u.isModel("tt")
+    model = u.Model("tt")
+    model.delete()
 
-    # u.isModel("rr")
-    # model = u.Model("rr")
-    # model.delete()
+    u.isModel("rr")
+    model = u.Model("rr")
+    model.delete()
 
     otherModel = u.Model("tt")
     model = u.Model("rr")
@@ -457,14 +448,13 @@ def test():
     model.init()
     otherModel.init()
 
-    manyToMany(model, otherModel)
-    model.addColumn("name")
-    otherModel.addColumn("name")
+    # manyToMany(model, otherModel)
+    model.addColumn("name", "text")
+    # otherModel.addColumn("name")
 
 
 
-
-main()
+main()    
 # test()
 
 
