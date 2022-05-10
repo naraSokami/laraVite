@@ -19,7 +19,6 @@ from env import *
 
 # morphRelashionships
 # softDeletes
-# [option] text DONE
 
 
 
@@ -350,7 +349,7 @@ def iconLists():
         print("\nsomething bad occured please report to dev :/\n")
 
 
-def createMail(mailName):
+def createMail(mailName=""):
     if mailName == "":
         name = input("\nName of the mail :\n")
     mail = u.Mail(name)
@@ -448,14 +447,17 @@ def test():
     model.init()
     otherModel.init()
 
-    # manyToMany(model, otherModel)
-    model.addColumn("name", "text")
-    # otherModel.addColumn("name")
+    model.addColumn("name")
+    otherModel.addColumn("name")
+    model.addColumn("testing")
+    model.addColumn("age")
+    manyToMany(model, otherModel)
+    print(otherModel.getColumns())
 
 
 
-main()    
-# test()
+# main()
+test()
 
 
 

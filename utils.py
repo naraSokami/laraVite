@@ -316,8 +316,26 @@ class Model:
  
 
     def getColumns(self):
-        # comming soon...
-        pass
+        columns = []
+        n = findLines("\${}->save\(\);".format(self.modelLower), self.controllerPath)
+        if len(n) > 0:
+            lines = getLines(self.controllerPath)
+            i = n[0] - 1
+            
+            while i > 0:
+                if lines[i - 1] == "\n":
+                    break
+
+                col = re.search("\${}->([A-z0-9]+) = \$request".format(self.modelLower), lines[i - 1])
+                if col is not None:
+                    columns.append(col.groups()[0])
+                i -= 1
+
+        if len(columns) == 0:
+            return None
+
+        return columns[::-1]
+            
         
 
     def addValidation(self, name):
@@ -454,11 +472,15 @@ class Model:
         if option == "file":
             inputType = "file"
 
+        otherModel = None
+        if option == "foreignId" and subOption == "many":
+            otherModel = Model(name.replace("_id", ""))
+
         # index
         if option == "file" or option == "imgIcon":
             index = "<td><img class=\"L-img\" src=\"{{{{ asset($item->{}) }}}}\"></img></td>".format(name)
         elif option == "foreignId" and subOption == "many":
-            index = "<td class=\"L-tags\">\n\t\t\t\t\t\t\t@foreach ($item->{name}s as ${name})\n\t\t\t\t\t\t\t\t<span class=\"L-tag\">{{{{ ${name}->id }}}}</span>\n\t\t\t\t\t\t\t@endforeach\n\t\t\t\t\t\t</td>".format(name = name.replace('_id', ''))
+            index = "<td class=\"L-tags\">\n\t\t\t\t\t\t\t@foreach ($item->{name}s as ${name})\n\t\t\t\t\t\t\t\t<span class=\"L-tag\">{{{{ ${name}->{firstCol} }}}}</span>\n\t\t\t\t\t\t\t@endforeach\n\t\t\t\t\t\t</td>".format(name = name.replace('_id', ''), firstCol = otherModel.getColumns()[0] if otherModel.getColumns() is not None else "id")
         elif option == "foreignId":
             index = "<td>{{{{ $item->{}->id }}}}</td>".format(name.replace('_id', ''))
         elif option == "icon" or option == "iconlist":
@@ -466,10 +488,10 @@ class Model:
         else:
             index = "<td>{{{{ $item->{} }}}}</td>".format(name)
 
-        # edit / create 
+        # edit / create
         if option == "foreignId" and subOption == "many":
-            create = '<div class="mb-3 col-12 col-md-6">\n\t\t\t\t\t@foreach (${name}s as ${name})\n\t\t\t\t\t\t<label for="">{{{{ ${name}->id }}}}</label>\n\t\t\t\t\t\t<input type="checkbox" name="{name}s[]" value="{{{{ ${name}->id }}}}">\n\t\t\t\t\t@endforeach\n\t\t\t\t</div>'.format(name = name.replace("_id", ""))
-            edit = '<div class="mb-3 col-12 col-md-6">\n\t\t\t\t\t@foreach (${name}s as ${name})\n\t\t\t\t\t\t<label for="">{{{{ ${name}->id }}}}</label>\n\t\t\t\t\t\t<input type="checkbox" name="{name}s[]" value="{{{{ ${name}->id }}}}" {{{{ ${modelLower}->{name}s->contains(${name}) ? "checked" : "" }}}}>\n\t\t\t\t\t@endforeach\n\t\t\t\t</div>'.format(name = name.replace("_id", ""), modelLower = self.modelLower)
+            create = '<div class="mb-3 col-12 col-md-6">\n\t\t\t\t\t<label>{nameUpper}s</label>\n\t\t\t\t\t@foreach (${name}s as ${name})\n\t\t\t\t\t\t<label class="L-tag">{{{{ ${name}->{firstCol} }}}}</label>\n\t\t\t\t\t\t<input type="checkbox" name="{name}s[]">\n\t\t\t\t\t@endforeach\n\t\t\t\t</div>'.format(name = name.replace("_id", ""), modelLower = self.modelLower, nameUpper = name.replace("_id", "").capitalize(), firstCol = otherModel.getColumns()[0] if otherModel.getColumns() is not None else "id")
+            edit = '<div class="mb-3 col-12 col-md-6">\n\t\t\t\t\t<label>{nameUpper}s</label>\n\t\t\t\t\t@foreach (${name}s as ${name})\n\t\t\t\t\t\t<label class="L-tag">{{{{ ${name}->{firstCol} }}}}</label>\n\t\t\t\t\t\t<input type="checkbox" name="{name}s[]" value="{{{{ ${name}->id }}}}" {{{{ ${modelLower}->{name}s->contains(${name}) ? "checked" : "" }}}}>\n\t\t\t\t\t@endforeach\n\t\t\t\t</div>'.format(name = name.replace("_id", ""), modelLower = self.modelLower, nameUpper = name.replace("_id", "").capitalize(), firstCol = otherModel.getColumns()[0] if otherModel.getColumns() is not None else "id")
         elif option == "icon":
             create = '<div class="mb-3 col-12 col-md-6">\n\t\t\t\t\t<label for="{name}" class="form-label">{nameUpper}</label>\n\t\t\t\t\t<div class="L-radio-container">\n\t\t\t\t\t\t@foreach (${iconList}s as ${iconList})\n\t\t\t\t\t\t\t<div class="L-radio-item">\n\t\t\t\t\t\t\t\t<i class="{{{{ ${iconList}->icon }}}}"></i>\n\t\t\t\t\t\t\t\t<input type=radio value="{{{{ ${iconList}->icon }}}}" name="{name}">\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t@endforeach\n\t\t\t\t\t</div>\n\t\t\t\t</div>'.format(name = name, nameUpper = name.capitalize(), iconList = subOption.lower())
             edit = '<div class="mb-3 col-12 col-md-6">\n\t\t\t\t\t<label for="{name}" class="form-label">{nameUpper}</label>\n\t\t\t\t\t<div class="L-radio-container">\n\t\t\t\t\t\t@foreach (${iconList}s as ${iconList})\n\t\t\t\t\t\t\t<div class="L-radio-item">\n\t\t\t\t\t\t\t\t<i class="{{{{ ${iconList}->icon }}}}"></i>\n\t\t\t\t\t\t\t\t<input type=radio value="{{{{ ${iconList}->icon }}}}" name="{name}" {{{{ ${iconList}->icon == ${modelLower}->{name} ? "checked" : "" }}}}>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t@endforeach\n\t\t\t\t\t</div>\n\t\t\t\t</div>'.format(name = name, nameUpper = name.capitalize(), iconList = subOption.lower(), modelLower = self.modelLower)
@@ -727,7 +749,7 @@ class Model:
 
         # add policies to controller
         for i in range(len(methods)):
-            addToMethod(methods[i], ["\t\t$this->authorize('{}', {}::class);\n".format(pMethods[i], self.model)], self.controllerPath)
+            addToMethod(methods[i], ["\t\t$this->authorize('{}', {}::class);\n\n".format(pMethods[i], self.model)], self.controllerPath)
         
 
     def addGates(self, methods=["create", "edit"]):
@@ -747,7 +769,7 @@ class Model:
         use("Illuminate\Support\Facades\Gate", self.controllerPath)
         for i in range(len(methods)):   
             var = "" if methods[i] == "create" else ", ${}".format(self.modelLower)
-            addToMethod(methods[i], ["\t\tGate::authorize('{}-{}'{});\n".format(methods[i], self.modelLower, var)], self.controllerPath) 
+            addToMethod(methods[i], ["\t\tGate::authorize('{}-{}'{});\n\n".format(methods[i], self.modelLower, var)], self.controllerPath) 
 
 
     def delete(self):
