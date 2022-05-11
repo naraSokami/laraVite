@@ -4,21 +4,26 @@ import utils as u
 import os
 from init import init, isInitialized
 from env import *
+import time
 
 
-# TODO : mails
-            # config/mail.php
-            # php artisan make:mail MailName
-            # return $this->from('mail@gmail.com')->view(emails.viewName); 
-            # Mail::to('mail@gmail.com')->send(new MailName());
-#        notifications
+
+
+# TODO : notifications
             # better with events/listeners
             # php artisan make:notification NotificationName
             # php artisan notification:table to save notifications
 
+#      : morphRelashionships
+#      : softDeletes
+#      : events (+listeners +observers)
+#      : roles system
+#      : newsletter DONE
+#      : improve gates&policies
+#      : add mail settings to env.py
+#      : deleteComponent()
+#      : add more features
 
-# morphRelashionships
-# softDeletes
 
 
 
@@ -381,6 +386,47 @@ def mails():
         print("\nsomething bad occured please report to dev :/\n")
 
 
+def createNewsletter(name=""):
+    if name == "":
+        name = input("\nName of the newsletter :\n")
+
+    newsletter = u.Newsletter(name)
+    newsletter.init()
+
+
+def deleteNewsletter(name=""):
+    if name == "":
+        name = input("\nName of the newsletter :\n")
+
+    newsletter = u.Newsletter(name)
+    newsletter.delete()
+
+
+def newsletters():
+    answ = u.ask("What do u wanna do ?", ["1", "2", "0"], ["1) New newsletter", "2) Delete newsletter", "0) back"])
+
+    if answ == "0":
+        return
+    elif answ == "1":
+        createNewsletter()
+    elif answ == "2":
+        deleteNewsletter()
+
+
+def moreA():
+    while True:
+        answ = u.ask("What do u wanna do ?", ["1", "2", "3", "0"], ["1) Mails", "2) Newsletters", "3) Coming soon...", "0) back"])
+
+        if answ == "0":
+            return
+        elif answ == "1":
+            mails()
+        elif answ == "2":
+            newsletters()
+        elif answ == "3":
+            print("\nComing soon...\n")
+
+
 def main():
 
     if not isInitialized():
@@ -396,7 +442,7 @@ def main():
                 init()
 
     while True:
-        res = u.ask("what do u wanna do ?\n", ["1", "2", "3", "4", "5", "6", "0"], ["1) New Model", "2) Modify Model", "3) Add Relashionship", "4) IconLists", "5) Mails", "6) Coming Soon...", "0) exit"])
+        res = u.ask("what do u wanna do ?\n", ["1", "2", "3", "4", "5", "0"], ["1) New Model", "2) Modify Model", "3) Add Relashionship", "4) IconLists", "5) more...", "0) exit"])
 
         if res == "1":
             createModel()
@@ -411,10 +457,7 @@ def main():
             iconLists()
 
         elif res == "5":
-            mails()
-
-        elif res == "6":
-            print("\ncoming soon...\n")
+            moreA()
 
         elif res == "0":
             u.migrate() 
@@ -423,8 +466,7 @@ def main():
             return 0
 
         u.migrate()
-        # print("\nthank u for using laraVite {}".format(VERSION))
-        # print("we hope to see u soon")
+
 
 
 
@@ -456,8 +498,8 @@ def test():
 
 
 
-# main()
-test()
+main()
+# test()
 
 
 
@@ -466,10 +508,12 @@ test()
 
 
 def temp():
-    portnames = ["PAN", "AMS", "CAS", "NYC", "HEL"]
-    for portname in portnames:
-        print(portname)
-        
+    l = u.Newsletter()
+    l.delete()
+    l.init()
+    u.migrate()
 
 
 # temp()
+
+

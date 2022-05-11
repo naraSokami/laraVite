@@ -1,4 +1,4 @@
-@extends('../../layouts/back')
+@extends('layouts/back')
 
 @section('content')
     <div class="container mt-4">

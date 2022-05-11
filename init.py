@@ -41,6 +41,9 @@ def init():
                 n = u.findLines(";", "webpack.mix.js")
                 if len(n) > 0:
                     u.replace(";", "\n.sass('resources/sass/app.scss', 'public/css')\n.sourceMaps();", "webpack.mix.js", 1, n[len(n) - 1])
+
+            if u.fileIncludes("/dashboard", "app/Providers/RouteServiceProvider.php"):
+                u.replace("/dashboard", "/", "app/Providers/RouteServiceProvider.php", 1)
             
         elif res == "2":
             print("coming soon...")

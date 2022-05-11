@@ -24,6 +24,9 @@ def ask(question, possibleAnswers, options=[]):
     res = input("")
 
     if res == "exit":
+        migrate() 
+        print("\nthank u for using laraVite {}".format(VERSION))
+        print("we hope to see u soon")
         exit()
 
     if res in possibleAnswers:
@@ -173,6 +176,26 @@ def migrate():
         os.system("php artisan migrate:fresh --seed")
 
 
+def component(name, args : dict, tab=0, spaces=0):
+    lines = getLines(os.path.dirname(__file__) + "/components/{}.blade.php".format(name))
+
+    for i in range(len(lines)):
+        for key, value in args.items():
+            lines[i] = lines[i].replace("__{}__".format(key), value)
+        if i != 0:
+            lines[i] = tab * '\t' + spaces * ' ' + lines[i]
+
+    return "".join(lines)
+
+
+def addRoute(routeStr):
+    if not fileIncludes(routeStr.split("\n")[0], "routes\\web.php"):
+        lines = addLines(["\n{}".format(routeStr)], "routes\\web.php", len(getLines("routes\\web.php")))
+        write("routes\\web.php", "".join(lines))
+    else:
+        print("route already exists /_/")
+    
+        
 def fontawesomeInit():
     if not fileIncludes("@fortawesome/fontawesome-free", "package.json"):
         os.system("npm install --save @fortawesome/fontawesome-free")
@@ -502,8 +525,8 @@ class Model:
             create = '<div class="mb-3 col-12 col-md-6">\n\t\t\t\t\t<label for="{name}" class="form-label">{nameUpper}</label>\n\t\t\t\t\t<textarea class="form-control" id="{name}" name="{name}"></textarea>\n\t\t\t\t</div>'.format(name = name, nameUpper = name.capitalize(), type = inputType)
             edit = '<div class="mb-3 col-12 col-md-6">\n\t\t\t\t\t<label for="{name}" class="form-label">{nameUpper}</label>\n\t\t\t\t\t<textarea class="form-control" id="{name}" name="{name}">{{{{ ${modelLower}->{name} }}}}</textarea>\n\t\t\t\t</div>'.format(modelLower = self.modelLower, name = name, nameUpper = name.capitalize(), type = inputType)
         else:
-            create = '<div class="mb-3 col-12 col-md-6">\n\t\t\t\t\t<label for="{name}" class="form-label">{nameUpper}</label>\n\t\t\t\t\t<input type={type} class="form-control" id="{name}" name="{name}">\n\t\t\t\t</div>'.format(name = name, nameUpper = name.capitalize(), type = inputType)
-            edit = '<div class="mb-3 col-12 col-md-6">\n\t\t\t\t\t<label for="{name}" class="form-label">{nameUpper}</label>\n\t\t\t\t\t<input type={type} class="form-control" id="{name}" name="{name}" value="{{{{ ${modelLower}->{name} }}}}">\n\t\t\t\t</div>'.format(modelLower = self.modelLower, name = name, nameUpper = name.capitalize(), type = inputType)
+            create = '<div class="mb-3 col-12 col-md-6">\n\t\t\t\t\t<label for="{name}" class="form-label">{nameUpper}</label>\n\t\t\t\t\t<input type=\"{type}\" class="form-control" id="{name}" name="{name}">\n\t\t\t\t</div>'.format(name = name, nameUpper = name.capitalize(), type = inputType)
+            edit = '<div class="mb-3 col-12 col-md-6">\n\t\t\t\t\t<label for="{name}" class="form-label">{nameUpper}</label>\n\t\t\t\t\t<input type=\"{type}\" class="form-control" id="{name}" name="{name}" value="{{{{ ${modelLower}->{name} }}}}">\n\t\t\t\t</div>'.format(modelLower = self.modelLower, name = name, nameUpper = name.capitalize(), type = inputType)
 
         msg = []
 
@@ -761,6 +784,7 @@ class Model:
         # AuthServiceProvider
         providerPath = "app\\Providers\\AuthServiceProvider.php"
         use("Illuminate\\Support\\Facades\\Gate", providerPath)
+        use("App\\Policies\\{}Policy".format(self.model), providerPath)
             
         for i in range(len(methods)):
             addToMethod("boot", ["\t\tGate::define('{}-{}', [{}Policy::class, '{}']);\n".format(methods[i], self.modelLower, self.model, pMethods[i])], providerPath)
@@ -932,6 +956,15 @@ class Mail:
 
         print("\nMail::to(\"mail@example.com\")->send(new {}Mail());\n".format(self.name.capitalize()))
 
+        return "Mail::to(\"mail@example.com\")->send(new {}Mail());".format(self.name.capitalize())
+
+
+    def addParam(self, name):
+        if not fileIncludes("public ${};".format(name), self.path):
+            replace("public function", "public ${};\n\tpublic function".format(name), self.path, 1)
+            replace("__construct\(", "__construct(${}, ".format(name), self.path)
+            addToMethod('__construct', ["\t\t$this->{} = ${};\n".format(name, name)], self.path)
+
 
     def delete(self):
         if os.path.isfile(self.path):
@@ -939,3 +972,142 @@ class Mail:
 
         if os.path.isfile(self.bladePath):
             os.remove(self.bladePath)
+
+
+
+class Event:
+    def __init__(self, name):
+        self.name = name
+        self.path = "app\\Events\\{}Event.php".format(name)
+
+    def init(self):
+        if not os.path.isfile(self.path):
+            os.system("php artisan make:event {}Event".format(self.name.capitalize()))
+        else:
+            print("event {} already exists /_/".format(self.name.capitalize()))
+
+
+
+class Newsletter:
+    def __init__(self, name="newsletter"):
+        self.name = name
+        self.controllerPath = "app\\Http\\Controllers\\{}Controller.php".format(self.name.capitalize())
+        self.createBladePath = "resources\\views\\back\\{}\\create.blade.php".format(self.name)
+        
+
+    def init(self):
+        if not os.path.isfile(self.controllerPath):
+            os.system("php artisan make:controller {}Controller".format(self.name.capitalize()))
+        else:
+            print("controller {}Controller already exists /_/".format(self.name.capitalize()))
+
+        # routes
+        use("App\\Http\\Controllers\\{}Controller".format(self.name.capitalize()), "routes\\web.php")
+        addRoute("Route::get('/back/{name}', [{nameUpper}Controller::class, 'create'])->name('{name}.create');".format(name = self.name, nameUpper = self.name.capitalize()))
+        addRoute("Route::post('/back/{name}', [{nameUpper}Controller::class, 'send'])->name('{name}.send');".format(name = self.name, nameUpper = self.name.capitalize()))
+
+        # navbar
+        navbarPath = "resources/views/partials/backNavbar.blade.php"
+        if not fileIncludes("<a href=\"{{{{ route('{}.create') }}}}\">".format(self.name), navbarPath):
+            replace("{{-- toReplace --}}", component("navbar-item", { 'route': '{}.create'.format(self.name), 'name': self.name.capitalize() }, tab=3) + "\n\t\t\t{{-- toReplace --}}", navbarPath, 1)
+
+        # blades
+        if not os.path.isdir("resources\\views\\back\\{}".format(self.name)):
+            os.mkdir("resources\\views\\back\\{}".format(self.name))
+        
+        if not os.path.isfile(self.createBladePath):    
+            shutil.copyfile("{}\\newsletters\\example.blade.php".format(os.path.dirname(__file__)), self.createBladePath)
+            replace("__name__", self.name, self.createBladePath)
+
+        # controller
+        use("App\\Models\\User", self.controllerPath)
+        use("Illuminate\\Support\\Facades\\Mail", self.controllerPath)
+        use("App\\Mail\\{}Mail".format(self.name.capitalize()), self.controllerPath)
+
+        n = findLines("\{", self.controllerPath)[0]
+        lines = []
+
+        if not fileIncludes("public function send", self.controllerPath):
+            lines = addLines([
+                "\tpublic function send(Request $request)\n",
+                "\t{\n",
+                "\t\t$this->validate($request, [\n",
+                "\t\t\t'subject' => 'required',\n",
+                "\t\t\t'content' => 'required',\n",
+                "\t\t]);\n",
+                "\n",
+                "\t\tforeach (User::where('{}ed', true)->get() as $user) {{\n".format(self.name),
+                "\t\t\tMail::to($user->email)->send(new {}Mail($request->subject, $request->content));\n".format(self.name.capitalize()),
+                "\t\t}\n",
+                "\n",
+                "\t\treturn redirect()->route('{}.create')->with('success', 'Mails successfully sent !');\n".format(self.name),
+                "\t}\n",
+                "\n",
+            ], self.controllerPath, n)
+        if len(lines) > 0:
+            write(self.controllerPath, "".join(lines))
+            lines = []
+
+        if not fileIncludes("public function create", self.controllerPath):
+            lines = addLines([
+                "\tpublic function create()\n",
+                "\t{\n",
+                "\t\treturn view('back.{}.create');\n".format(self.name),
+                "\t}\n",
+                "\n"
+            ], self.controllerPath, n)
+        if len(lines) > 0:
+            write(self.controllerPath, "".join(lines))
+
+        # mail
+        mail = Mail(self.name)
+        mail.init()
+        mail.addParam('content')
+        mail.addParam('subject')
+        if not fileIncludes("<p>{{ $content }}</p>", mail.bladePath):
+            replace("<body>", "<body>\n\t<p>{{ $content }}</p>", mail.bladePath)
+        replace("return \$this->view", "return $this->subject($this->subject)->view", mail.path)
+
+        # userColumn
+        userMigrationPath = glob.glob("database\\migrations\\*_create_users_table.php")[0]
+        if not fileIncludes("$table->boolean('{}ed')".format(self.name), userMigrationPath):
+            replace("\$table->id\(\);", "$table->id();\n\t\t\t$table->boolean('{}ed')->default(false);".format(self.name), userMigrationPath)
+
+
+    def delete(self):
+        # controller
+        if os.path.isfile(self.controllerPath):
+            os.remove(self.controllerPath)
+
+        # routes
+        deleteLineWhere("test.create", "routes\\web.php")
+        deleteLineWhere("test.send", "routes\\web.php")
+
+        # navbar
+        navbarPath = "resources/views/partials/backNavbar.blade.php"
+        n = findLines("<a href=\"{{{{ route\('{}.create'\) }}}}\">".format(self.name), navbarPath)
+        if len(n) > 0:
+            deleteLines(n[0] - 1, n[0] + 6, navbarPath)
+
+        # blades
+        if os.path.isdir("resources\\views\\back\\{}".format(self.name)):
+            shutil.rmtree("resources\\views\\back\\{}".format(self.name))
+
+        # mail
+        mail = Mail(self.name)
+        mail.delete()
+
+        # userColumn
+        print("\$table->boolean\('{}ed'\)".format(self.name))
+        userMigrationPath = glob.glob("database\\migrations\\*_create_users_table.php")[0]
+        deleteLineWhere("\$table->boolean\('{}ed'\)".format(self.name), userMigrationPath)
+
+
+        
+
+        
+
+        
+
+
+    
