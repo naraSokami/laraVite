@@ -3,7 +3,7 @@ import shutil
 import utils as u
 from relationships import *
 import os
-from init import init, isInitialized, initRolesSystem
+from init import init, isInitialized, initEnv
 from env import *
 import time
 
@@ -16,12 +16,10 @@ import time
 #      : morphRelashionships
 #      : softDeletes
 #      : events (+listeners +observers)
-#      : roles system DONE
-#      : improve gates&policies
-#      : add mail settings to env.py
+#      : add mail settings to env.py DONE
 #      : deleteComponent()
-#      : check oneToMany()
-#      : hide buttons
+#      : check oneToMany() DONE
+#      : hide buttons on policies&gates
 #      : add more features
 
 
@@ -357,29 +355,30 @@ def main():
 
 
 def test():
-    # u.isModel("tt")
-    # model = u.Model("tt")
-    # model.delete()
+    u.isModel("tt")
+    model = u.Model("tt")
+    model.delete()
 
-    # u.isModel("rr")
-    # model = u.Model("rr")
-    # model.delete()
+    u.isModel("rr")
+    model = u.Model("rr")
+    model.delete()
 
-    # otherModel = u.Model("tt")
+    otherModel = u.Model("tt")
     model = u.Model("rr")
 
     model.init()
-    # otherModel.init()
+    otherModel.init()
 
     model.addColumn("name")
-    addPoliciesAndGates(model)
-    # manyToMany(model, otherModel)
+    otherModel.addColumn("name")
+    # addPoliciesAndGates(model)
+    oneToMany(model, otherModel)
 
 
 
 
-# main()
-test()
+main()
+# test()
 
 
 
@@ -388,7 +387,7 @@ test()
 
 
 def temp():
-    initRolesSystem()
+    initEnv()
     pass
 
 

@@ -78,7 +78,7 @@ def oneToOne(model, otherModel):
 
 def oneToMany(model , otherModel):
     # addColumn
-    otherModel.addColumn("{}_id".format(model.modelLower), "foreignId", "many")
+    otherModel.addColumn("{}_id".format(model.modelLower), "foreignId", "one_to_many")
     model.addToController(otherModel.modelLower)
 
     # model functions

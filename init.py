@@ -4,6 +4,7 @@ import utils as u
 import glob
 from relationships import *
 import time
+from env import *
 
 def initRolesSystem():
     # model
@@ -58,7 +59,24 @@ def initRolesSystem():
     print("roles system initialized +__+")
     
 
+def initEnv():
+    u.addEnv("LARAVITE_AUTO_MIGRATE", "True")
+    u.addEnv("LARAVITE_INIT", "True") 
 
+    envs = [
+        MAIL_MAILER,
+        MAIL_HOST,
+        MAIL_PORT,
+        MAIL_USERNAME,
+        MAIL_PASSWORD,
+        MAIL_ENCRYPTION,
+    ]
+
+    for env in envs:
+        if not u.isEnv(u.varname(env)):
+            u.addEnv(u.varname(env), env)
+        else:
+            u.setEnv(u.varname(env), env)
 
 
 def init():
@@ -160,11 +178,9 @@ def init():
     print("if u didn't received it just now")
 
     # Env
-    u.addEnv("LARAVITE_AUTO_MIGRATE", "True")
-    u.addEnv("LARAVITE_INIT", "True")
+    initEnv()
 
-    print("\nInitialization complete !")    
-
+    print("\nInitialization complete !")   
     return 0
 
 

@@ -11,6 +11,11 @@ def command(command):
     os.system(command)
 
 
+def varname(var):
+    vnames = [name for name in globals() if globals()[name] is var]
+    return vnames[0] if len(vnames) > 0 else None
+
+
 def isMail(mailName):
     if os.path.isfile("app\\Mail\\{}Mail.php".format(mailName.replace("Mail", "").capitalize())):
         return True
@@ -152,7 +157,7 @@ def isEnv(name):
 def getEnv(name):
     lines = getLines('.env')
     for line in lines:
-        a = re.findall(r"{}=([A-z,]+)".format(name), line)
+        a = re.findall(r"{}=([A-z0-9,.]+)".format(name), line)
         if len(a) > 0:
             return a[0]
     print("print no env named \"{}\" found /_/".format(name))
@@ -388,7 +393,8 @@ class Model:
         if option == 'integer' or option == 'foreignId':
             value = 1
 
-        replace("insert\(\[", "insert([\n\t\t\t'{}' => {},".format(name, value), self.seederPath)
+        if not fileIncludes("'{}' => {}".format(name, value), self.seederPath):
+            replace("insert\(\[", "insert([\n\t\t\t'{}' => {},".format(name, value), self.seederPath)
 
 
     def addLinesToStore(self, linesToAdd):
@@ -496,7 +502,7 @@ class Model:
             inputType = "file"
 
         otherModel = None
-        if option == "foreignId" and subOption == "many":
+        if option == "foreignId":
             otherModel = Model(name.replace("_id", ""))
 
         # index
@@ -505,14 +511,18 @@ class Model:
         elif option == "foreignId" and subOption == "many":
             index = "<td class=\"L-tags\">\n\t\t\t\t\t\t\t@foreach ($item->{name}s as ${name})\n\t\t\t\t\t\t\t\t<span class=\"L-tag\">{{{{ ${name}->{firstCol} }}}}</span>\n\t\t\t\t\t\t\t@endforeach\n\t\t\t\t\t\t</td>".format(name = name.replace('_id', ''), firstCol = otherModel.getColumns()[0] if otherModel.getColumns() is not None else "id")
         elif option == "foreignId":
-            index = "<td>{{{{ $item->{}->id }}}}</td>".format(name.replace('_id', ''))
+            index = "<td>{{{{ $item->{name} ? $item->{name}->{firstCol} : \"None\" }}}}</td>".format(name = name.replace('_id', ''), firstCol = otherModel.getColumns()[0] if otherModel.getColumns() is not None else "id")
         elif option == "icon" or option == "iconlist":
             index = "<td><i class=\"{{{{ $item->{} }}}}\"></i></td>".format(name)
         else:
             index = "<td>{{{{ $item->{} }}}}</td>".format(name)
 
         # edit / create
-        if option == "foreignId" and subOption == "many":
+        if option == "foreignId" and subOption == "one_to_many":
+            print(otherModel.getColumns())
+            create = '<div class="mb-3 col-12 col-md-6">\n\t\t\t\t\t<label for="{name}" class="form-label">{nameUpper}</label>\n\t\t\t\t\t<select name="{name}" id="{name}">\n\t\t\t\t\t\t@foreach (${otherModelLower}s as ${otherModelLower})\n\t\t\t\t\t\t\t<option value="{{{{ ${otherModelLower}->id }}}}">{{{{ ${otherModelLower}->id }}}}</option>\n\t\t\t\t\t\t@endforeach\n\t\t\t\t\t</select>\n\t\t\t\t</div>'.format(name = name, nameUpper = name.replace("_id", "").capitalize(), otherModelLower = name.replace("_id", ""))
+            edit = '<div class="mb-3 col-12 col-md-6">\n\t\t\t\t\t<label for="{name}" class="form-label">{nameUpper}</label>\n\t\t\t\t\t<select name="{name}" id="{name}">\n\t\t\t\t\t\t@foreach (${otherModelLower}s as ${otherModelLower})\n\t\t\t\t\t\t\t<option value="{{{{ ${otherModelLower}->id }}}}" {{{{ ${otherModelLower}->id == ${modelLower}->{name} ? \'selected\' : \'\' }}}}>{{{{ ${otherModelLower}->{firstCol} }}}}</option>\n\t\t\t\t\t\t@endforeach\n\t\t\t\t\t</select>\n\t\t\t\t</div>'.format(name = name, nameUpper = name.replace("_id", "").capitalize(), modelLower = self.modelLower, otherModelLower = name.replace("_id", ""), firstCol = otherModel.getColumns()[0])
+        elif option == "foreignId" and subOption == "many":
             create = '<div class="mb-3 col-12 col-md-6">\n\t\t\t\t\t<label>{nameUpper}s</label>\n\t\t\t\t\t@foreach (${name}s as ${name})\n\t\t\t\t\t\t<label class="L-tag">{{{{ ${name}->{firstCol} }}}}</label>\n\t\t\t\t\t\t<input type="checkbox" name="{name}s[]">\n\t\t\t\t\t@endforeach\n\t\t\t\t</div>'.format(name = name.replace("_id", ""), modelLower = self.modelLower, nameUpper = name.replace("_id", "").capitalize(), firstCol = otherModel.getColumns()[0] if otherModel.getColumns() is not None else "id")
             edit = '<div class="mb-3 col-12 col-md-6">\n\t\t\t\t\t<label>{nameUpper}s</label>\n\t\t\t\t\t@foreach (${name}s as ${name})\n\t\t\t\t\t\t<label class="L-tag">{{{{ ${name}->{firstCol} }}}}</label>\n\t\t\t\t\t\t<input type="checkbox" name="{name}s[]" value="{{{{ ${name}->id }}}}" {{{{ ${modelLower}->{name}s->contains(${name}) ? "checked" : "" }}}}>\n\t\t\t\t\t@endforeach\n\t\t\t\t</div>'.format(name = name.replace("_id", ""), modelLower = self.modelLower, nameUpper = name.replace("_id", "").capitalize(), firstCol = otherModel.getColumns()[0] if otherModel.getColumns() is not None else "id")
         elif option == "icon":
