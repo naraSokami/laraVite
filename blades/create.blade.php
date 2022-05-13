@@ -15,7 +15,7 @@
  
         <div class="row">
             {{-- toReplace --}}
-                <button type="submit" class="btn btn-info">Submit</button>
+                <button type=submit class="btn btn-info">Submit</button>
             </form>
         </div>
     </div>

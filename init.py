@@ -1,7 +1,65 @@
-from dataclasses import replace
 import os
 import shutil
 import utils as u
+import glob
+from relationships import *
+import time
+
+def initRolesSystem():
+    # model
+    if len(glob.glob("app\\Models\\Role.php")) == 0:
+        os.system("php artisan make:model Role")
+
+    # migration
+    if len(glob.glob("database\\migrations\\*create_roles_table.php")) == 0:
+        os.system("php artisan make:migration create_roles_table")
+
+    if not u.fileIncludes("$table->string('name');", glob.glob("database\\migrations\\*create_roles_table.php")[0]):
+        u.replace("\$table->id\(\);", "$table->id();\n\t\t\t$table->string('name');", glob.glob("database\\migrations\\*create_roles_table.php")[0])
+
+    # seeder
+    if len(glob.glob("database\\seeders\\RoleSeeder.php")) == 0:
+        os.system("php artisan make:seeder RoleSeeder")
+
+    u.replace("\/\/", "DB::table('roles')->insert([\n\t\t\t'name' => 'user',\n\t\t]);\n\n\t\tDB::table('roles')->insert([\n\t\t\t'name' => 'admin',\n\t\t]);", "database\\seeders\\RoleSeeder.php")
+    u.use("Illuminate\\Support\\Facades\\DB", "database\\seeders\\RoleSeeder.php")
+
+    if not u.fileIncludes("RoleSeeder::class,", "database/seeders/DatabaseSeeder.php"):
+        u.replace("\$this->call\(\[", "$this->call([\n\t\t\tRoleSeeder::class,", "database/seeders/DatabaseSeeder.php")
+
+    # relashionship
+    userModel = u.Empty()
+    userModel.model = "User"
+    userModel.modelLower = "user"
+    userModel.migrationPath = glob.glob("database\\migrations\\*_create_users_table.php")[0]
+    userModel.modelPath = "app\\Models\\User.php"
+    userModel.table = "users"
+
+    roleModel = u.Empty()
+    roleModel.model = "Role"
+    roleModel.modelLower = "role"
+    roleModel.modelPath = "app\\Models\\Role.php"
+    roleModel.migrationPath = glob.glob("database\\migrations\\*create_roles_table.php")[0]
+    # userModel.factoryPath = "database\\factories\\UserFactory.php"
+    userModel.controllerPath = "app\\Http\\Controllers\\Auth\\RegisteredUserController.php"
+
+    hasMany(roleModel, userModel)
+    belongsTo(roleModel, userModel)
+    avoidIntegrityConstraintViolation(roleModel, userModel)
+
+    # migration / seeder
+    u.Model.addColumnToMigration(userModel, "role_id", "foreignId")
+    u.replace("foreignId\('role_id'\)->nullable\(\)", "foreignId('role_id')->default(1)", userModel.migrationPath)
+    # u.Model.addColumnToFactory(userModel, "role_id", "foreignId")
+
+    # Controller
+    u.Model.addColumnToStore(userModel, "role_id", "foreignId")
+
+    print("roles system initialized +__+")
+    
+
+
+
 
 def init():
 
@@ -48,6 +106,11 @@ def init():
         elif res == "2":
             print("coming soon...")
 
+    # ask if add roles system
+    res = u.ask("Add roles system ? [y/n]", ["y", "n"])
+    if res == "y":
+        initRolesSystem()
+    
         
     for dir in ["back", "pages"]:
         if not os.path.isdir("resources/views/{}".format(dir)):

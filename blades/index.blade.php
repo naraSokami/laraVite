@@ -38,16 +38,16 @@
                         <td>
                             <form action="{{ route("modelLower.edit", $item) }}" method="get">
                                 @csrf
-                                <input type="hidden" name="_idvf" value="{{ encrypt($item->id) }}">
-                                <button class="btn btn-primary">EDIT</button>
+                                <input type=hidden name="_idvf" value="{{ encrypt($item->id) }}">
+                                <button type=submit class="btn btn-primary">EDIT</button>
                             </form>
                         </td>
                         <td>
                             <form action="{{ route("modelLower.destroy", $item) }}" method="post">
                                 @csrf
                                 @method('DELETE')
-                                <input type="hidden" name="_idvf" value="{{ encrypt($item->id) }}">
-                                <button class="btn btn-danger">DELETE</button>
+                                <input type=hidden name="_idvf" value="{{ encrypt($item->id) }}">
+                                <button type=submit class="btn btn-danger">DELETE</button>
                             </form>
                         </td>
                     </tr>
