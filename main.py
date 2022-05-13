@@ -21,6 +21,7 @@ import time
 #      : add mail settings to env.py
 #      : deleteComponent()
 #      : check oneToMany()
+#      : hide buttons
 #      : add more features
 
 
@@ -96,7 +97,7 @@ def modifyModel(modelName=""):
     model = u.Model(modelName)
     model.init()
 
-    action = u.ask("Possible actions:", ["1", "2", "3", "4", "0"], ["1) Add column", "2) Delete model", "3) Add relashionship", "4) Add Policies&Gates", "0) back"])
+    action = u.ask("Possible actions:", ["1", "2", "3", "4", "5", "0"], ["1) Add column", "2) Delete model", "3) Add relashionship", "4) Add Policies&Gates", "5) Add _idvf", "0) back"])
 
     if action == "0":
         return
@@ -112,6 +113,9 @@ def modifyModel(modelName=""):
 
     elif action == "4":
         addPoliciesAndGates(model)
+
+    elif action == "5":
+        model.addIdvfToMethods(model.controllerPath)
 
 
 def deleteModel(model):
@@ -353,32 +357,29 @@ def main():
 
 
 def test():
-    u.isModel("tt")
-    model = u.Model("tt")
-    model.delete()
+    # u.isModel("tt")
+    # model = u.Model("tt")
+    # model.delete()
 
-    u.isModel("rr")
-    model = u.Model("rr")
-    model.delete()
+    # u.isModel("rr")
+    # model = u.Model("rr")
+    # model.delete()
 
-    otherModel = u.Model("tt")
+    # otherModel = u.Model("tt")
     model = u.Model("rr")
 
     model.init()
-    otherModel.init()
+    # otherModel.init()
 
     model.addColumn("name")
-    otherModel.addColumn("name")
-    model.addColumn("testing")
-    model.addColumn("age")
-    manyToMany(model, otherModel)
-    print(otherModel.getColumns())
+    addPoliciesAndGates(model)
+    # manyToMany(model, otherModel)
 
 
 
 
 # main()
-# test()
+test()
 
 
 
@@ -391,6 +392,6 @@ def temp():
     pass
 
 
-temp()
+# temp()
 
 

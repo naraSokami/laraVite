@@ -277,9 +277,10 @@ def addToMethod(method, content : list, filePath, doIfExisting=False):
 
     if not doIfExisting:
         for line in content:
-            if inMethod(method, line, filePath):
-                do = False
-                break    
+            if line != "\n":
+                if inMethod(method, line, filePath):
+                    do = False
+                    break    
     
     begin, end = getMethodHeight(method, filePath)
 
@@ -293,7 +294,6 @@ def addToMethod(method, content : list, filePath, doIfExisting=False):
 
 class Empty:
     pass
-
 
 
 
@@ -772,7 +772,10 @@ class Model:
 
         # add policies to controller
         for i in range(len(methods)):
-            addToMethod(methods[i], ["\t\t$this->authorize('{}', {}::class);\n\n".format(pMethods[i], self.model)], self.controllerPath)
+            arg = "{}::class".format(self.model)
+            if methods[i] in ["update", "destroy"]:
+                arg = "${}".format(self.modelLower)
+            addToMethod(methods[i], ["\t\t$this->authorize('{}', {});\n".format(pMethods[i], arg), "\n"], self.controllerPath)
         
 
     def addGates(self, methods=["create", "edit"]):
@@ -793,7 +796,7 @@ class Model:
         use("Illuminate\Support\Facades\Gate", self.controllerPath)
         for i in range(len(methods)):   
             var = "" if methods[i] == "create" else ", ${}".format(self.modelLower)
-            addToMethod(methods[i], ["\t\tGate::authorize('{}-{}'{});\n\n".format(methods[i], self.modelLower, var)], self.controllerPath) 
+            addToMethod(methods[i], ["\t\tGate::authorize('{}-{}'{});\n".format(methods[i], self.modelLower, var), "\n"], self.controllerPath) 
 
 
     def delete(self):
