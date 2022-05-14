@@ -200,6 +200,15 @@ def getTabsAndSpaces(filePath, flag="toReplace"):
 def component(name, args : dict, tabs=0, spaces=0):
     lines = getLines(os.path.dirname(__file__) + "/components/{}.blade.php".format(name))
 
+    # ##__isArg__??__then__##
+    for i in range(len(lines)):
+        matches = re.search("##(.*?)\?\?(.*?)##", lines[i])
+        if matches != None:
+            if matches.group(1).replace('__', '') in args:
+                lines[i] = re.sub("##(.*?)\?\?(.*?)##", matches.group(2), lines[i])
+            else:
+                lines[i] = re.sub("##(.*?)\?\?(.*?)##", "", lines[i])
+
     for i in range(len(lines)):
         for key, value in args.items():
             lines[i] = lines[i].replace("__{}__".format(key), value)
@@ -541,25 +550,27 @@ class Model:
             index = "<td>{{{{ $item->{} }}}}</td>".format(name)
 
         # edit / create
+        createTabs, createSpaces = getTabsAndSpaces(self.createPath)
+        editTabs, editSpaces = getTabsAndSpaces(self.editPath)
+
         if option == "foreignId" and subOption == "one_to_many":
-            print(otherModel.getColumns())
-            create = '<div class="mb-3 col-12 col-md-6">\n\t\t\t\t\t<label for="{name}" class="form-label">{nameUpper}</label>\n\t\t\t\t\t<select name="{name}" id="{name}">\n\t\t\t\t\t\t@foreach (${otherModelLower}s as ${otherModelLower})\n\t\t\t\t\t\t\t<option value="{{{{ ${otherModelLower}->id }}}}">{{{{ ${otherModelLower}->id }}}}</option>\n\t\t\t\t\t\t@endforeach\n\t\t\t\t\t</select>\n\t\t\t\t</div>'.format(name = name, nameUpper = name.replace("_id", "").capitalize(), otherModelLower = name.replace("_id", ""))
-            edit = '<div class="mb-3 col-12 col-md-6">\n\t\t\t\t\t<label for="{name}" class="form-label">{nameUpper}</label>\n\t\t\t\t\t<select name="{name}" id="{name}">\n\t\t\t\t\t\t@foreach (${otherModelLower}s as ${otherModelLower})\n\t\t\t\t\t\t\t<option value="{{{{ ${otherModelLower}->id }}}}" {{{{ ${otherModelLower}->id == ${modelLower}->{name} ? \'selected\' : \'\' }}}}>{{{{ ${otherModelLower}->{firstCol} }}}}</option>\n\t\t\t\t\t\t@endforeach\n\t\t\t\t\t</select>\n\t\t\t\t</div>'.format(name = name, nameUpper = name.replace("_id", "").capitalize(), modelLower = self.modelLower, otherModelLower = name.replace("_id", ""), firstCol = otherModel.getColumns()[0])
+            create = component("one-to-many-input", { 'name': name, 'name_upper': name.replace("_id", "").capitalize(), 'other_model_lower': name.replace("_id", ""), 'first_col': otherModel.getColumns()[0] if otherModel.getColumns() is not None else "id" }, createTabs, createSpaces)
+            edit = component("one-to-many-input", { 'name': name, 'name_upper': name.replace("_id", "").capitalize(), 'other_model_lower': name.replace("_id", ""), 'first_col': otherModel.getColumns()[0] if otherModel.getColumns() is not None else "id", 'model_lower': self.modelLower }, editTabs, editSpaces)
         elif option == "foreignId" and subOption == "many":
-            create = '<div class="mb-3 col-12 col-md-6">\n\t\t\t\t\t<label>{nameUpper}s</label>\n\t\t\t\t\t@foreach (${name}s as ${name})\n\t\t\t\t\t\t<label class="L-tag">{{{{ ${name}->{firstCol} }}}}</label>\n\t\t\t\t\t\t<input type="checkbox" name="{name}s[]">\n\t\t\t\t\t@endforeach\n\t\t\t\t</div>'.format(name = name.replace("_id", ""), modelLower = self.modelLower, nameUpper = name.replace("_id", "").capitalize(), firstCol = otherModel.getColumns()[0] if otherModel.getColumns() is not None else "id")
-            edit = '<div class="mb-3 col-12 col-md-6">\n\t\t\t\t\t<label>{nameUpper}s</label>\n\t\t\t\t\t@foreach (${name}s as ${name})\n\t\t\t\t\t\t<label class="L-tag">{{{{ ${name}->{firstCol} }}}}</label>\n\t\t\t\t\t\t<input type="checkbox" name="{name}s[]" value="{{{{ ${name}->id }}}}" {{{{ ${modelLower}->{name}s->contains(${name}) ? "checked" : "" }}}}>\n\t\t\t\t\t@endforeach\n\t\t\t\t</div>'.format(name = name.replace("_id", ""), modelLower = self.modelLower, nameUpper = name.replace("_id", "").capitalize(), firstCol = otherModel.getColumns()[0] if otherModel.getColumns() is not None else "id")
+            create = component("many-to-many-input", { 'name': name.replace("_id", ""), 'name_upper': name.replace("_id", "").capitalize(), 'first_col': otherModel.getColumns()[0] if otherModel.getColumns() is not None else "id" }, createTabs, createSpaces)
+            edit = component("many-to-many-input", { 'name': name.replace("_id", ""), 'name_upper': name.replace("_id", "").capitalize(), 'first_col': otherModel.getColumns()[0] if otherModel.getColumns() is not None else "id", 'model_lower': self.modelLower }, editTabs, editSpaces)
         elif option == "icon":
-            create = '<div class="mb-3 col-12 col-md-6">\n\t\t\t\t\t<label for="{name}" class="form-label">{nameUpper}</label>\n\t\t\t\t\t<div class="L-radio-container">\n\t\t\t\t\t\t@foreach (${iconList}s as ${iconList})\n\t\t\t\t\t\t\t<div class="L-radio-item">\n\t\t\t\t\t\t\t\t<i class="{{{{ ${iconList}->icon }}}}"></i>\n\t\t\t\t\t\t\t\t<input type=radio value="{{{{ ${iconList}->icon }}}}" name="{name}">\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t@endforeach\n\t\t\t\t\t</div>\n\t\t\t\t</div>'.format(name = name, nameUpper = name.capitalize(), iconList = subOption.lower())
-            edit = '<div class="mb-3 col-12 col-md-6">\n\t\t\t\t\t<label for="{name}" class="form-label">{nameUpper}</label>\n\t\t\t\t\t<div class="L-radio-container">\n\t\t\t\t\t\t@foreach (${iconList}s as ${iconList})\n\t\t\t\t\t\t\t<div class="L-radio-item">\n\t\t\t\t\t\t\t\t<i class="{{{{ ${iconList}->icon }}}}"></i>\n\t\t\t\t\t\t\t\t<input type=radio value="{{{{ ${iconList}->icon }}}}" name="{name}" {{{{ ${iconList}->icon == ${modelLower}->{name} ? "checked" : "" }}}}>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t@endforeach\n\t\t\t\t\t</div>\n\t\t\t\t</div>'.format(name = name, nameUpper = name.capitalize(), iconList = subOption.lower(), modelLower = self.modelLower)
+            create = component("class-icon-input", { 'name': name, 'name_upper': name.capitalize(), 'icon_list': subOption.lower() }, createTabs, createSpaces)
+            edit = component("class-icon-input", { 'name': name, 'name_upper': name.capitalize(), 'icon_list': subOption.lower(), 'model_lower': self.modelLower }, editTabs, editSpaces)
         elif option == "imgIcon":
-            create = '<div class="mb-3 col-12 col-md-6">\n\t\t\t\t\t<label for="{name}" class="form-label">{nameUpper}</label>\n\t\t\t\t\t<div class="L-radio-container">\n\t\t\t\t\t\t@foreach (${iconList}s as ${iconList})\n\t\t\t\t\t\t\t<div class="L-radio-item">\n\t\t\t\t\t\t\t\t<img src="{{{{ asset(${iconList}->icon) }}}}">\n\t\t\t\t\t\t\t\t<input type=radio value="{{{{ ${iconList}->icon }}}}" name="{name}">\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t@endforeach\n\t\t\t\t\t</div>\n\t\t\t\t</div>'.format(name = name, nameUpper = name.capitalize(), iconList = subOption.lower())
-            edit = '<div class="mb-3 col-12 col-md-6">\n\t\t\t\t\t<label for="{name}" class="form-label">{nameUpper}</label>\n\t\t\t\t\t<div class="L-radio-container">\n\t\t\t\t\t\t@foreach (${iconList}s as ${iconList})\n\t\t\t\t\t\t\t<div class="L-radio-item">\n\t\t\t\t\t\t\t\t<img src="{{{{ asset(${iconList}->icon) }}}}">\n\t\t\t\t\t\t\t\t<input type=radio value="{{{{ ${iconList}->icon }}}}" name="{name}" {{{{ ${iconList}->icon == ${modelLower}->{name} ? "checked" : "" }}}}>\n\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t@endforeach\n\t\t\t\t\t</div>\n\t\t\t\t</div>'.format(name = name, nameUpper = name.capitalize(), iconList = subOption.lower(), modelLower = self.modelLower)
+            create = component("img-icon-input", { 'name': name, 'name_upper': name.capitalize(), 'icon_list': subOption.lower() }, createTabs, createSpaces)
+            edit = component("img-icon-input", { 'name': name, 'name_upper': name.capitalize(), 'icon_list': subOption.lower(), 'model_lower': self.modelLower }, createTabs, createSpaces)
         elif option == "text":
-            create = '<div class="mb-3 col-12 col-md-6">\n\t\t\t\t\t<label for="{name}" class="form-label">{nameUpper}</label>\n\t\t\t\t\t<textarea class="form-control" id="{name}" name="{name}"></textarea>\n\t\t\t\t</div>'.format(name = name, nameUpper = name.capitalize(), type = inputType)
-            edit = '<div class="mb-3 col-12 col-md-6">\n\t\t\t\t\t<label for="{name}" class="form-label">{nameUpper}</label>\n\t\t\t\t\t<textarea class="form-control" id="{name}" name="{name}">{{{{ ${modelLower}->{name} }}}}</textarea>\n\t\t\t\t</div>'.format(modelLower = self.modelLower, name = name, nameUpper = name.capitalize(), type = inputType)
+            create = component("text-input", { 'name': name, 'name_upper': name.capitalize() }, createTabs, createSpaces)
+            edit = component("text-input", { 'name': name, 'name_upper': name.capitalize(), 'model_lower': self.modelLower }, editTabs, editSpaces)
         else:
-            create = '<div class="mb-3 col-12 col-md-6">\n\t\t\t\t\t<label for="{name}" class="form-label">{nameUpper}</label>\n\t\t\t\t\t<input type=\"{type}\" class="form-control" id="{name}" name="{name}">\n\t\t\t\t</div>'.format(name = name, nameUpper = name.capitalize(), type = inputType)
-            edit = '<div class="mb-3 col-12 col-md-6">\n\t\t\t\t\t<label for="{name}" class="form-label">{nameUpper}</label>\n\t\t\t\t\t<input type=\"{type}\" class="form-control" id="{name}" name="{name}" value="{{{{ ${modelLower}->{name} }}}}">\n\t\t\t\t</div>'.format(modelLower = self.modelLower, name = name, nameUpper = name.capitalize(), type = inputType)
+            create = component("base-input", { 'name': name, 'name_upper': name.capitalize(), 'type': inputType }, createTabs, createSpaces)
+            edit = component("base-input", { 'name': name, 'name_upper': name.capitalize(), 'type': inputType, 'model_lower': self.modelLower }, editTabs, editSpaces)
 
         msg = []
 
@@ -735,9 +746,9 @@ class Model:
         if option == "imgIcon":
             env = "LARAVITE_IMG_ICON_LISTS"
 
-        if option == "icon" or option == "imgIcon":
+        if  option == "icon" or option == "imgIcon":
             subOption = askIconList(env)
-            print(subOption)
+            print("{} list chosen".format(subOption))
 
             if subOption != None:
                 iconList = IconList(subOption)
@@ -1028,7 +1039,7 @@ class Newsletter:
         self.name = name
         self.controllerPath = "app\\Http\\Controllers\\{}Controller.php".format(self.name.capitalize())
         self.createBladePath = "resources\\views\\back\\{}\\create.blade.php".format(self.name)
-        
+
 
     def init(self):
         if not os.path.isfile(self.controllerPath):
@@ -1043,7 +1054,7 @@ class Newsletter:
 
         # navbar
         addToNavbar("{}.create".format(self.name), self.name)
-        
+
         # blades
         if not os.path.isdir("resources\\views\\back\\{}".format(self.name)):
             os.mkdir("resources\\views\\back\\{}".format(self.name))

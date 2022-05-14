@@ -20,7 +20,9 @@ import time
 #      : deleteComponent()
 #      : hide buttons on policies&gates
 #      : setup.pyc
-#      : more components adaptation
+#      : improve component() for more than 1 condition per line
+#      : more components adaptation (table, table-item) DONE(navbar, inputs)
+#      : fix askIconList()
 #      : add more features
 
 
@@ -221,7 +223,7 @@ def deleteIconList(iconListName=""):
 
 
 def iconLists():
-    answ = u.ask("What do u wanna do ?", ["1", "2", "3", "0"], ["1) create a new iconList", "2) list all iconLists", "3) delete iconList", "0) back"])
+    answ = u.ask("What do u wanna do ?", ["1", "2", "3", "0"], ["1) New iconList", "2) List all iconLists", "3) Delete iconList", "0) back"])
 
     if answ == "0":
         return
@@ -356,24 +358,23 @@ def main():
 
 
 def test():
-    # u.isModel("tt")
-    # model = u.Model("tt")
-    # model.delete()
+    u.isModel("tt")
+    model = u.Model("tt")
+    model.delete()
 
     u.isModel("rr")
     model = u.Model("rr")
     model.delete()
 
-    # otherModel = u.Model("tt")
+    otherModel = u.Model("tt")
     model = u.Model("rr")
 
     model.init()
-    # otherModel.init()
+    otherModel.init()
 
     model.addColumn("name")
-    # otherModel.addColumn("name")
-    # addPoliciesAndGates(model)
-    # oneToMany(model, otherModel)
+    otherModel.addColumn("name")
+    oneToMany(model, otherModel)
 
 
 
@@ -388,7 +389,6 @@ test()
 
 
 def temp():
-    # initEnv()
     pass
 
 
