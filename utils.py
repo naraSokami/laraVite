@@ -181,14 +181,30 @@ def migrate():
         os.system("php artisan migrate:fresh --seed")
 
 
-def component(name, args : dict, tab=0, spaces=0):
+def getTabsAndSpaces(filePath, flag="toReplace"):
+    tabs = 0
+    spaces = 0
+    lines = getLines(filePath) 
+    for line in lines:
+        if "{{-- {} --}}".format(flag) in line:
+            for char in line:
+                if ord(char) == 9:
+                    tabs += 1
+                elif ord(char) == 32:
+                    spaces += 1
+                else:
+                    break
+    return tabs, spaces
+
+
+def component(name, args : dict, tabs=0, spaces=0):
     lines = getLines(os.path.dirname(__file__) + "/components/{}.blade.php".format(name))
 
     for i in range(len(lines)):
         for key, value in args.items():
             lines[i] = lines[i].replace("__{}__".format(key), value)
         if i != 0:
-            lines[i] = tab * '\t' + spaces * ' ' + lines[i]
+            lines[i] = tabs * '\t' + spaces * ' ' + lines[i]
 
     return "".join(lines)
 
@@ -199,6 +215,13 @@ def addRoute(routeStr):
         write("routes\\web.php", "".join(lines))
     else:
         print("route already exists /_/")
+
+
+def addToNavbar(route, name):
+    navbarPath = "resources/views/partials/backNavbar.blade.php"
+    tabs, spaces = getTabsAndSpaces(navbarPath)
+    if not fileIncludes("<a href=\"{{{{ route('{}') }}}}\">".format(route), navbarPath):
+        replace("{{-- toReplace --}}", component("navbar-item", { 'route': '{}'.format(route), 'name': name.capitalize() }, tabs=tabs, spaces=spaces) + "\n\t\t\t{{-- toReplace --}}", navbarPath, 1)
     
         
 def fontawesomeInit():
@@ -576,8 +599,7 @@ class Model:
 
 
     def initNavbar(self):
-        if not fileIncludes("<a href=\"{{{{ route('{}.index') }}}}\">".format(self.modelLower), "resources/views/partials/backNavbar.blade.php") and self.inNavbar:
-            replace("{{-- toReplace --}}", "<li>\n\t\t\t\t<a href=\"{{{{ route('{modelLower}.index') }}}}\">\n\t\t\t\t\t<i class='bx bx-grid-alt'></i>\n\t\t\t\t\t<span class=\"links_name\">{model}</span>\n\t\t\t\t</a>\n\t\t\t\t<span class=\"tooltip\">{model}</span>\n\t\t\t</li>\n\t\t\t{{{{-- toReplace --}}}}".format(modelLower = self.modelLower, model = self.model), "resources/views/partials/backNavbar.blade.php", 1)
+        addToNavbar("{}.index".format(self.modelLower), self.modelLower)
 
 
     def initDatabaseSeeder(self):
@@ -1020,10 +1042,8 @@ class Newsletter:
         addRoute("Route::post('/back/{name}', [{nameUpper}Controller::class, 'send'])->name('{name}.send');".format(name = self.name, nameUpper = self.name.capitalize()))
 
         # navbar
-        navbarPath = "resources/views/partials/backNavbar.blade.php"
-        if not fileIncludes("<a href=\"{{{{ route('{}.create') }}}}\">".format(self.name), navbarPath):
-            replace("{{-- toReplace --}}", component("navbar-item", { 'route': '{}.create'.format(self.name), 'name': self.name.capitalize() }, tab=3) + "\n\t\t\t{{-- toReplace --}}", navbarPath, 1)
-
+        addToNavbar("{}.create".format(self.name), self.name)
+        
         # blades
         if not os.path.isdir("resources\\views\\back\\{}".format(self.name)):
             os.mkdir("resources\\views\\back\\{}".format(self.name))

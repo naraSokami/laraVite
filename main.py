@@ -18,9 +18,9 @@ import time
 #      : events (+listeners +observers)
 #      : add mail settings to env.py DONE
 #      : deleteComponent()
-#      : check oneToMany() DONE
 #      : hide buttons on policies&gates
 #      : setup.pyc
+#      : more components adaptation
 #      : add more features
 
 
@@ -356,30 +356,30 @@ def main():
 
 
 def test():
-    u.isModel("tt")
-    model = u.Model("tt")
-    model.delete()
+    # u.isModel("tt")
+    # model = u.Model("tt")
+    # model.delete()
 
     u.isModel("rr")
     model = u.Model("rr")
     model.delete()
 
-    otherModel = u.Model("tt")
+    # otherModel = u.Model("tt")
     model = u.Model("rr")
 
     model.init()
-    otherModel.init()
+    # otherModel.init()
 
     model.addColumn("name")
-    otherModel.addColumn("name")
+    # otherModel.addColumn("name")
     # addPoliciesAndGates(model)
-    oneToMany(model, otherModel)
+    # oneToMany(model, otherModel)
 
 
 
 
-main()
-# test()
+# main()
+test()
 
 
 
@@ -388,7 +388,7 @@ main()
 
 
 def temp():
-    initEnv()
+    # initEnv()
     pass
 
 
