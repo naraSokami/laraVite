@@ -379,8 +379,8 @@ def test():
 
 
 
-# main()
-test()
+main()
+# test()
 
 
 
@@ -389,6 +389,7 @@ test()
 
 
 def temp():
+    u.askIconList("LARAVITE_ICON_LISTS")
     pass
 
 

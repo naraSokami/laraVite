@@ -897,7 +897,7 @@ class IconList(Model):
         super().init()
 
         if not fileIncludes(self.env, ".env"):
-            addEnv(self.env, "," + self.model)
+            addEnv(self.env, self.model)
         else:
             if self.model not in getEnv(self.env):
                 newValue = [self.model]+getEnv(self.env).split(",")
