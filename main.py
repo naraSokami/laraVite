@@ -20,6 +20,7 @@ import time
 #      : deleteComponent()
 #      : check oneToMany() DONE
 #      : hide buttons on policies&gates
+#      : setup.pyc
 #      : add more features
 
 
