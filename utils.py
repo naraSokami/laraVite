@@ -197,7 +197,7 @@ def getTabsAndSpaces(filePath, flag="toReplace"):
     return tabs, spaces
 
 
-def component(name, args : dict, tabs=0, spaces=0):
+def component(name, args : dict, tabs=0, spaces=0, format="string"):
     lines = getLines(os.path.dirname(__file__) + "/components/{}.blade.php".format(name))
 
     # ##__isArg__??__then__##
@@ -215,8 +215,26 @@ def component(name, args : dict, tabs=0, spaces=0):
         if i != 0:
             lines[i] = tabs * '\t' + spaces * ' ' + lines[i]
 
+    if format == "list":
+        return lines
     return "".join(lines)
 
+
+def deleteComponent(component, filePath):
+    lines = getLines(filePath)
+    for i in range(len(lines)):
+        print(i + 1)
+        if component[0] in lines[i]:
+            test = True
+            for j in range(len(component)):
+                if not component[j] in lines[i + j]:
+                    test = False
+                    print("False")
+                    break
+            if test == True:
+                print("True")
+                deleteLines(i + 1, i + len(component) + 1, filePath)
+    
 
 def addRoute(routeStr):
     if not fileIncludes(routeStr.split("\n")[0], "routes\\web.php"):

@@ -16,13 +16,12 @@ import time
 #      : morphRelashionships
 #      : softDeletes
 #      : events (+listeners +observers)
-#      : add mail settings to env.py DONE
-#      : deleteComponent()
+#      : deleteComponent() DONE
 #      : hide buttons on policies&gates
 #      : setup.pyc
 #      : improve component() for more than 1 condition per line
 #      : more components adaptation (table, table-item) DONE(navbar, inputs)
-#      : fix askIconList() DONE
+#      : update component() to object format (maybe)
 #      : add more features
 
 
@@ -363,29 +362,30 @@ def main():
 
 
 def test():
-    u.isModel("tt")
-    model = u.Model("tt")
-    model.delete()
+    # u.isModel("tt")
+    # model = u.Model("tt")
+    # model.delete()
 
-    u.isModel("rr")
-    model = u.Model("rr")
-    model.delete()
+    # u.isModel("rr")
+    # model = u.Model("rr")
+    # model.delete()
 
-    otherModel = u.Model("tt")
+    # otherModel = u.Model("tt")
     model = u.Model("rr")
 
     model.init()
-    otherModel.init()
+    # otherModel.init()
 
-    model.addColumn("name")
-    otherModel.addColumn("name")
-    oneToMany(model, otherModel)
+    # model.addColumn("name")
+    # otherModel.addColumn("name")
+    createTabs, createSpaces = u.getTabsAndSpaces(model.createPath)
+    u.deleteComponent(u.component("base-input", { 'name': 'name', 'name_upper': 'Name', 'type': 'text' }, createTabs, createSpaces, format="list"), model.createPath)
 
 
 
 
-main()
-# test()
+# main()
+test()
 
 
 
