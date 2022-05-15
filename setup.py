@@ -5,14 +5,6 @@ from env import VERSION, PATH
 import time
 
 
-# # path
-# PATH = input("where do you wanna import files ?")
-
-# while len(glob.glob(PATH.replace("~", os.path.expanduser('~')))) < 1:
-#     PATH = input("path invalid please enter a valid path\n")
-
-
-
 # bin directory
 if not os.path.isdir(os.path.expanduser('~') + "/bin"):
     os.mkdir(os.path.expanduser('~') + "/bin")
@@ -36,6 +28,9 @@ if not os.path.isfile(PATH + "/.bashrc"):
         f.write("\n")
         f.write("alias laraVv='python {}/main.py'\n".format(PATH.replace("\\", "/")))
         f.close()
+
+# env.py
+shutil.copyfile(PATH + "/env.example.py", PATH + "/env.py")
 
 # ask to run source
 com = "source " + PATH.replace("\\", "/") + "/.bashrc"
