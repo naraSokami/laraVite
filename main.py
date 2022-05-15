@@ -22,7 +22,7 @@ import time
 #      : setup.pyc
 #      : improve component() for more than 1 condition per line
 #      : more components adaptation (table, table-item) DONE(navbar, inputs)
-#      : fix askIconList()
+#      : fix askIconList() DONE
 #      : add more features
 
 
@@ -311,6 +311,11 @@ def moreA():
 
 
 def main():
+    if not os.path.isfile(".env"):
+        print("you don't seem to be in a laravel-project directory 🤕")
+        print("if u actually are, please check if there is a .env file /_/")
+        print("if u still have this message by then, please contact the dev 🤙")
+        return 0
 
     if not isInitialized():
         print("It seems your project isn't initialized yet /_/")
@@ -344,8 +349,8 @@ def main():
 
         elif res == "0":
             u.migrate() 
-            print("\nthank u for using laraVite {}".format(VERSION))
-            print("we hope to see u soon")
+            print("\nthank u for using laraVite {} ✨".format(VERSION))
+            print("we hope to see u soon 🐯")
             return 0
 
         u.migrate()
@@ -389,7 +394,7 @@ main()
 
 
 def temp():
-    u.askIconList("LARAVITE_ICON_LISTS")
+    # print("thank u for using laraVite ✨".format(VERSION))
     pass
 
 
