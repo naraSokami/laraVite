@@ -15,12 +15,12 @@ import time
 
 #      : morphRelashionships
 #      : softDeletes
-#      : events (+listeners +observers)
-#      : deleteComponent() DONE
+#      : events (+listeners) DONE
+#      : add args for Event (maybe)
+#      : observers
 #      : hide buttons on policies&gates
-#      : setup.pyc
 #      : improve component() for more than 1 condition per line
-#      : more components adaptation (table, table-item) DONE(navbar, inputs)
+#      : more components adaptation (table, table-item)
 #      : update component() to object format (maybe)
 #      : add more features
 
@@ -295,9 +295,36 @@ def newsletters():
         deleteNewsletter()
 
 
+def createEvent(name=""):
+    if name == "":
+        name = input("\nName of the event :\n")
+
+    event = u.Event(name)
+    event.init()
+
+
+def deleteEvent(name=""):
+    if name == "":
+        name = input("\nName of the event :\n")
+
+    event = u.Event(name)
+    event.delete()
+
+
+def events():
+    answ = u.ask("What do u wanna do ?", ["1", "2", "0"], ["1) New event", "2) Delete event", "0) back"])
+
+    if answ == "0":
+        return
+    elif answ == "1":
+        createEvent()
+    elif answ == "2":
+        print("coming soon...")
+
+
 def moreA():
     while True:
-        answ = u.ask("What do u wanna do ?", ["1", "2", "3", "0"], ["1) Mails", "2) Newsletters", "3) Coming soon...", "0) back"])
+        answ = u.ask("What do u wanna do ?", ["1", "2", "3", "4", "0"], ["1) Mails", "2) Newsletters", "3) Events", "4) Coming soon...", "0) back"])
 
         if answ == "0":
             return
@@ -306,6 +333,8 @@ def moreA():
         elif answ == "2":
             newsletters()
         elif answ == "3":
+            events()
+        elif answ == "4":
             print("\nComing soon...\n")
 
 
@@ -384,8 +413,8 @@ def test():
 
 
 
-# main()
-test()
+main()
+# test()
 
 
 
@@ -394,7 +423,10 @@ test()
 
 
 def temp():
-    # print("thank u for using laraVite ✨".format(VERSION))
+    event = u.Event("test")
+    event.init()
+    time.sleep(3)
+    event.delete()
     pass
 
 

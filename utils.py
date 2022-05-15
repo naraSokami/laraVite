@@ -3,6 +3,7 @@ import io
 import glob
 import os
 import os.path
+from shelve import Shelf
 import shutil
 from env import *
 
@@ -1039,16 +1040,72 @@ class Mail:
 
 
 
+class Listener:
+    def __init__(self, name, event=None):
+        self.name = name
+        self.event = event
+        self.path = "app\\Listeners\\{}Listener.php".format(name)
+
+
+    def init(self):
+        if not os.path.isfile(self.path):
+            if self.event is not None:
+                os.system("php artisan make:listener {}Listener --event={}Event".format(self.name.capitalize(), self.event.name.capitalize()))
+            else:
+                os.system("php artisan make:listener {}Listener".format(self.name.capitalize()))
+        else:
+            print("listener {}Listener already exists /_/".format(self.name.capitalize()))
+            return 0
+
+
+
 class Event:
     def __init__(self, name):
         self.name = name
         self.path = "app\\Events\\{}Event.php".format(name)
+        self.listener = None
+
+    
+    def addListener(self, name=""):
+        if name == "":
+            name = self.name
+
+        self.listener = Listener(name, self)
+        self.listener.init()
+
+        # eventServiceProvider
+        use("App\\Listeners\\{}Listener".format(name.capitalize()), EVENT_PROVIDER_PATH)
+        if not fileIncludes("{}Event::class => [".format(self.name.capitalize()), EVENT_PROVIDER_PATH):
+            replace("protected \$listen = \[", "protected $listen = [\n\t\t{}Event::class => [\n\t\t],".format(self.name.capitalize()), EVENT_PROVIDER_PATH)  
+        if not fileIncludes("{}Listener::class".format(name.capitalize()), EVENT_PROVIDER_PATH):
+            replace("{}Event::class => \[".format(self.name.capitalize()), "{}Event::class => [\n\t\t\t{}Listener::class,".format(self.name.capitalize(), name.capitalize()), EVENT_PROVIDER_PATH)
+
 
     def init(self):
         if not os.path.isfile(self.path):
             os.system("php artisan make:event {}Event".format(self.name.capitalize()))
         else:
             print("event {} already exists /_/".format(self.name.capitalize()))
+
+        self.addListener()
+
+    
+    def delete(self):
+        # files
+        if os.path.isfile(self.path):
+            os.remove(self.path)
+        if os.path.isfile(self.listener.path):
+            os.remove(self.listener.path)
+
+        # eventServiceProvider
+        n = findLines("{}Event::class => \[".format(self.name.capitalize()), EVENT_PROVIDER_PATH)
+        m = findLines("\],", EVENT_PROVIDER_PATH)
+        if len(n) > 0 and len(m) > 0:
+            for i in m:
+                if i > n[0]:
+                    deleteLines(n[0], i + 1, EVENT_PROVIDER_PATH)
+                    break
+        # coming soon bcs flemme
 
 
 
