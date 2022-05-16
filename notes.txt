@@ -1,0 +1,60 @@
+slides => all cruds
+       => choose main slide
+
+services => all cruds limit(1-4)
+         => icons (8)
+    
+request info => @auth
+                    full name + email not empty
+                    teacher choose rdv
+                    mail to user
+                @else
+                    register + login buttons
+
+courses => full crud
+        => popular ones => limit(4-8)
+        => user_id (teacher)
+        => 0$ = FREE
+        => pagination 9/page
+        => categories (ManyToMany)
+        => description (slice)
+
+teachers => mid stay same
+         => side random
+
+teacher has => messages list
+
+newsletter => only members that are no yet registered as user
+
+event created => mail send through newsletter
+
+articles => title
+         => description
+         => tags
+         => cotegories
+
+comment => article_id (OneToMany)
+        => now() - created_at
+
+default photo
+
+roles => admin => does everything he wants
+               => validate courses / articles
+
+      => teacher => modify his profile
+                 => index, create : courses (need to be approved by admin)
+                 => edit, delete : his courses
+                 => accept, refuse appointment
+
+      => redactor => modify his profile
+                  => index, create : articles (need to be approved by admin)
+                  => update, delete : his articles
+
+      => member => modify his profile
+                => index : his courses and appointments
+
+
+github => private
+       => projet-final-nom-prenom-cs22
+       => initials -bd
+       => 

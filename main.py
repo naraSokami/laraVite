@@ -22,6 +22,8 @@ import time
 #      : improve component() for more than 1 condition per line
 #      : more components adaptation (table, table-item)
 #      : update component() to object format (maybe)
+#      : update component() with deleteComponent() (navbar)
+#      : checkbox-input
 #      : add more features
 
 

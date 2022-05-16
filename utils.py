@@ -1227,6 +1227,4 @@ class Newsletter:
         
 
         
-
-
     
