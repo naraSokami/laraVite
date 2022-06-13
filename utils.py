@@ -558,9 +558,11 @@ class Model:
 
         # index
         if option == "file" or option == "imgIcon":
-            index = "<td><img class=\"L-img\" src=\"{{{{ asset($item->{}) }}}}\"></img></td>".format(name)
+            index = "<td><img class=\"L-img\" src=\"{{{{ asset($item->{}) }}}}\"></td>".format(name)
         elif option == "foreignId" and subOption == "many":
             index = "<td class=\"L-tags\">\n\t\t\t\t\t\t\t@foreach ($item->{name}s as ${name})\n\t\t\t\t\t\t\t\t<span class=\"L-tag\">{{{{ ${name}->{firstCol} }}}}</span>\n\t\t\t\t\t\t\t@endforeach\n\t\t\t\t\t\t</td>".format(name = name.replace('_id', ''), firstCol = otherModel.getColumns()[0] if otherModel.getColumns() is not None else "id")
+        elif option == "foreignId" and subOption == "one_to_one":
+            index = "<td>{{{{ $item->{}->{} }}}}</td>".format(name.replace('_id', ''), otherModel.getColumns()[0] if otherModel.getColumns() is not None else "id")
         elif option == "foreignId":
             index = "<td>{{{{ $item->{name} ? $item->{name}->{firstCol} : \"None\" }}}}</td>".format(name = name.replace('_id', ''), firstCol = otherModel.getColumns()[0] if otherModel.getColumns() is not None else "id")
         elif option == "icon" or option == "iconlist":
@@ -573,6 +575,9 @@ class Model:
         editTabs, editSpaces = getTabsAndSpaces(self.editPath)
 
         if option == "foreignId" and subOption == "one_to_many":
+            create = component("one-to-many-input", { 'name': name, 'name_upper': name.replace("_id", "").capitalize(), 'other_model_lower': name.replace("_id", ""), 'first_col': otherModel.getColumns()[0] if otherModel.getColumns() is not None else "id" }, createTabs, createSpaces)
+            edit = component("one-to-many-input", { 'name': name, 'name_upper': name.replace("_id", "").capitalize(), 'other_model_lower': name.replace("_id", ""), 'first_col': otherModel.getColumns()[0] if otherModel.getColumns() is not None else "id", 'model_lower': self.modelLower }, editTabs, editSpaces)
+        elif option == "foreignId" and subOption == "one_to_one":
             create = component("one-to-many-input", { 'name': name, 'name_upper': name.replace("_id", "").capitalize(), 'other_model_lower': name.replace("_id", ""), 'first_col': otherModel.getColumns()[0] if otherModel.getColumns() is not None else "id" }, createTabs, createSpaces)
             edit = component("one-to-many-input", { 'name': name, 'name_upper': name.replace("_id", "").capitalize(), 'other_model_lower': name.replace("_id", ""), 'first_col': otherModel.getColumns()[0] if otherModel.getColumns() is not None else "id", 'model_lower': self.modelLower }, editTabs, editSpaces)
         elif option == "foreignId" and subOption == "many":

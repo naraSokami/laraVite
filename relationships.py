@@ -64,7 +64,8 @@ def avoidIntegrityConstraintViolation(model, otherModel):
 
 def oneToOne(model, otherModel):
     # addColumn
-    otherModel.addColumn("{}_id".format(model.modelLower), "foreignId", "many")
+    otherModel.addColumn("{}_id".format(model.modelLower), "foreignId", "one_to_one")
+    model.addToController(otherModel.modelLower)
 
     # model functions
     hasOne(model, otherModel)
@@ -93,7 +94,7 @@ def oneToMany(model , otherModel):
 
 def manyToMany(model, otherModel):
     # init Pivot
-    pivot = u.Pivot("rr", "tt")
+    pivot = u.Pivot(model.modelLower, otherModel.modelLower)
     pivot.init()
 
     # controller

@@ -24,8 +24,11 @@ import time
 #      : update component() to object format (maybe)
 #      : update component() with deleteComponent() (navbar)
 #      : checkbox-input
+#      : RoleSeeder::class,
+#      : middlewares
+#      : policies -> add view()
+#      : review oneToOne
 #      : add more features
-
 
 
 
@@ -393,30 +396,31 @@ def main():
 
 
 def test():
-    # u.isModel("tt")
-    # model = u.Model("tt")
-    # model.delete()
+    u.isModel("tt")
+    model = u.Model("tt")
+    model.delete()
 
-    # u.isModel("rr")
-    # model = u.Model("rr")
-    # model.delete()
+    u.isModel("rr")
+    model = u.Model("rr")
+    model.delete()
 
-    # otherModel = u.Model("tt")
+    otherModel = u.Model("tt")
     model = u.Model("rr")
 
     model.init()
-    # otherModel.init()
+    otherModel.init()
 
-    # model.addColumn("name")
-    # otherModel.addColumn("name")
-    createTabs, createSpaces = u.getTabsAndSpaces(model.createPath)
-    u.deleteComponent(u.component("base-input", { 'name': 'name', 'name_upper': 'Name', 'type': 'text' }, createTabs, createSpaces, format="list"), model.createPath)
+    model.addColumn("name")
+    otherModel.addColumn("name")
+    oneToOne(model, otherModel)
+    # createTabs, createSpaces = u.getTabsAndSpaces(model.createPath)
+    # u.deleteComponent(u.component("base-input", { 'name': 'name', 'name_upper': 'Name', 'type': 'text' }, createTabs, createSpaces, format="list"), model.createPath)
 
 
 
 
-main()
-# test()
+# main()
+test()
 
 
 

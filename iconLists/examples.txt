@@ -1,0 +1,4 @@
+__type__=class
+fa-solid fa-flask-vial
+fa-solid fa-microscope
+fa-solid fa-campfire
