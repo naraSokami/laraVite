@@ -124,6 +124,14 @@ def init():
         elif res == "2":
             print("coming soon...")
 
+
+    # DatabaseSeeder
+    n = u.findLines("{", "database/seeders/DatabaseSeeder.php")[1]
+    print(n)
+    lines = u.addLines(["\t\t$this->call([\n", "\n", "\t\t]);\n", "\n"], "database/seeders/DatabaseSeeder.php", n)
+    u.write("database/seeders/DatabaseSeeder.php", "".join(lines))
+    
+
     # ask if add roles system
     res = u.ask("Add roles system ? [y/n]", ["y", "n"])
     if res == "y":
@@ -159,13 +167,6 @@ def init():
     os.system("php artisan make:controller WelcomeController")
     shutil.move("resources/views/welcome.blade.php", "resources/views/pages/welcome.blade.php")
     u.replace("\/\/", "function index()\n\t{\n\t\treturn view('pages.welcome', compact());\n\t}", "app/Http/Controllers/WelcomeController.php")
-
-
-    # DatabaseSeeder
-    n = u.findLines("{", "database/seeders/DatabaseSeeder.php")[1]
-    print(n)
-    lines = u.addLines(["\t\t$this->call([\n", "\n", "\t\t]);\n", "\n"], "database/seeders/DatabaseSeeder.php", n)
-    u.write("database/seeders/DatabaseSeeder.php", "".join(lines))
 
 
     # Storage

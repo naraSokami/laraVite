@@ -15,7 +15,6 @@ import time
 
 #      : morphRelashionships
 #      : softDeletes
-#      : events (+listeners) DONE
 #      : add args for Event (maybe)
 #      : observers
 #      : hide buttons on policies&gates
@@ -24,10 +23,10 @@ import time
 #      : update component() to object format (maybe)
 #      : update component() with deleteComponent() (navbar)
 #      : checkbox-input
-#      : RoleSeeder::class,
+#      : RoleSeeder::class, DONE
 #      : middlewares
 #      : policies -> add view()
-#      : review oneToOne
+#      : review oneToOne DONE
 #      : add more features
 
 
@@ -400,29 +399,28 @@ def test():
     model = u.Model("tt")
     model.delete()
 
-    u.isModel("rr")
-    model = u.Model("rr")
-    model.delete()
+    # u.isModel("rr")
+    # model = u.Model("rr")
+    # model.delete()
 
-    otherModel = u.Model("tt")
-    model = u.Model("rr")
+    # otherModel = u.Model("tt")
+    # model = u.Model("rr")
 
-    model.init()
-    otherModel.init()
+    # model.init()
+    # otherModel.init()
 
-    model.addColumn("name")
-    otherModel.addColumn("name")
-    oneToOne(model, otherModel)
+    # model.addColumn("name")
+    # otherModel.addColumn("name")
+    # oneToOne(model, otherModel)
+
     # createTabs, createSpaces = u.getTabsAndSpaces(model.createPath)
     # u.deleteComponent(u.component("base-input", { 'name': 'name', 'name_upper': 'Name', 'type': 'text' }, createTabs, createSpaces, format="list"), model.createPath)
 
 
 
 
-# main()
-test()
-
-
+main()
+# test()
 
 
 
