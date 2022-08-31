@@ -1,3 +1,4 @@
+import subprocess
 import re
 import io
 import glob
@@ -6,6 +7,7 @@ import os.path
 from shelve import Shelf
 import shutil
 from env import *
+import threading
 
 
 def command(command):
@@ -15,6 +17,13 @@ def command(command):
 def varname(var):
     vnames = [name for name in globals() if globals()[name] is var]
     return vnames[0] if len(vnames) > 0 else None
+
+
+def serv(name):
+    def action():
+        subprocess.call(f'python {PATH}/serv/{name}.py', creationflags=subprocess.CREATE_NEW_CONSOLE)
+
+    threading.Thread(target=action).start()
 
 
 def isMail(mailName):

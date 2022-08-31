@@ -98,7 +98,7 @@ def init():
     os.system("composer require laravel/ui")
     os.system("php artisan ui bootstrap")
     os.system("npm install")
-    os.system("npm run dev")
+    # os.system("npm run dev")
 
 
     # Authentication
@@ -110,13 +110,14 @@ def init():
         if res == "1":
             os.system("composer require laravel/breeze --dev")
             os.system("php artisan breeze:install")
-            os.system("npm install && npm run dev")
+            os.system("npm install")
+            # os.system("npm run dev")
             os.system("php artisan migrate")
             
-            if not u.fileIncludes(".sass('resources/sass/app.scss', 'public/css')", "webpack.mix.js"):
-                n = u.findLines(";", "webpack.mix.js")
-                if len(n) > 0:
-                    u.replace(";", "\n.sass('resources/sass/app.scss', 'public/css')\n.sourceMaps();", "webpack.mix.js", 1, n[len(n) - 1])
+            # if not u.fileIncludes(".sass('resources/sass/app.scss', 'public/css')", "webpack.mix.js"):
+            #     n = u.findLines(";", "webpack.mix.js")
+            #     if len(n) > 0:
+            #         u.replace(";", "\n.sass('resources/sass/app.scss', 'public/css')\n.sourceMaps();", "webpack.mix.js", 1, n[len(n) - 1])
 
             if u.fileIncludes("/dashboard", "app/Providers/RouteServiceProvider.php"):
                 u.replace("/dashboard", "/", "app/Providers/RouteServiceProvider.php", 1)
@@ -173,10 +174,10 @@ def init():
     os.system("php artisan storage:link")
 
     # Eventualy
-    os.system("npm run dev")
-    print("\nmake sure to \"npm run dev\" until")
-    print("u see the \"build successful\" notif")
-    print("if u didn't received it just now")
+    # os.system("npm run dev")
+    # print("\nmake sure to \"npm run dev\" until")
+    # print("u see the \"build successful\" notif")
+    # print("if u didn't received it just now")
 
     # Env
     initEnv()

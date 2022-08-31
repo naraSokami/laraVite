@@ -343,6 +343,10 @@ def moreA():
 
 
 def main():
+    if AUTO_SERV:
+        u.serv('npm')
+        u.serv('php')
+
     if not os.path.isfile(".env"):
         print("you don't seem to be in a laravel-project directory 🤕")
         print("if u actually are, please check if there is a .env file /_/")
@@ -427,11 +431,14 @@ main()
 
 
 def temp():
-    event = u.Event("test")
-    event.init()
-    time.sleep(3)
-    event.delete()
-    pass
+    # event = u.Event("test")
+    # event.init()
+    # time.sleep(3)
+    # event.delete()
+    # pass
+
+    u.serv('npm')
+    u.serv('php')
 
 
 # temp()
